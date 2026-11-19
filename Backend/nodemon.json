@@ -1,0 +1,33 @@
+{
+  "verbose": false,
+  "watch": [
+    "index.js",
+    "config/",
+    "controllers/",
+    "middleware/",
+    "routes/",
+    "services/",
+    "utils/"
+  ],
+  "ignore": [
+    "**/uploads/**",
+    "uploads/**",
+    "uploads/*",
+    "**/backups/**",
+    "backups/**",
+    "backups/*",
+    "prisma/seed*",
+    "**/*.log",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.mp3",
+    "**/*.wav",
+    "**/*.pptx",
+    "**/*.pdf",
+    "**/*.docx",
+    "**/manifest.json",
+    "node_modules/**"
+  ],
+  "ext": "js,mjs,json"
+}

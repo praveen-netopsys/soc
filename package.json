@@ -9,8 +9,9 @@
     "dev:all": "npm run dev",
     "dev:backend": "npm run dev --prefix Backend",
     "dev:frontend": "npm run dev --prefix Frontend",
-    "dev:ai": "cd ai-service && .venv\\Scripts\\python.exe main.py",
+    "dev:ai": "cd ai-service && python main.py",
     "install:all": "npm install && npm install --prefix Backend && npm install --prefix Frontend",
+    "test:llm": "node scripts/test-llm.js",
     "build": "npm run build --prefix Frontend"
   },
   "devDependencies": {

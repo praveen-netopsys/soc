@@ -1,5 +1,9 @@
 import axios from 'axios';
 import crypto from 'crypto';
+import { execFile } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
 
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
 
@@ -61,9 +65,55 @@ class PythonService {
         confidence: response.data?.confidence || 0
       };
     } catch (error) {
-      console.warn('[FaceID] Python AI service verification issue:', error.response?.data || error.message);
+      console.warn('[FaceID] Python microservice on port 8000 unreachable, using direct Python biometric CLI fallback:', error.message);
 
-      // Fallback matching when Python service is offline or for hash-based embeddings
+      // Direct Python CLI fallback for biometric matching when HTTP microservice is offline
+      try {
+        const cliPath = path.resolve('..', 'ai-service', 'verify_face_cli.py');
+        const altCliPath = path.resolve('ai-service', 'verify_face_cli.py');
+        const targetCli = fs.existsSync(cliPath) ? cliPath : (fs.existsSync(altCliPath) ? altCliPath : null);
+
+        if (targetCli) {
+          const tempFile = path.join(os.tmpdir(), `face_verify_${Date.now()}_${Math.random().toString(36).slice(2)}.json`);
+          fs.writeFileSync(tempFile, JSON.stringify(payload), 'utf8');
+
+          const cliResult = await new Promise((resolve) => {
+            execFile('python', [targetCli, tempFile], { timeout: 15000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+              try { fs.unlinkSync(tempFile); } catch (_) {}
+              if (err) {
+                console.warn('[FaceID] Biometric CLI execution warning:', stderr || err.message);
+                return resolve(null);
+              }
+              try {
+                const lines = stdout.trim().split('\n');
+                for (let i = lines.length - 1; i >= 0; i--) {
+                  const line = lines[i].trim();
+                  if (line.startsWith('{') && line.endsWith('}')) {
+                    return resolve(JSON.parse(line));
+                  }
+                }
+                resolve(null);
+              } catch (_) {
+                resolve(null);
+              }
+            });
+          });
+
+          if (cliResult) {
+            const matchedUserId = cliResult.user_id || cliResult.id || null;
+            return {
+              matched: Boolean(cliResult.matched),
+              id: matchedUserId,
+              user_id: matchedUserId,
+              confidence: cliResult.confidence || 0
+            };
+          }
+        }
+      } catch (cliErr) {
+        console.warn('[FaceID] Direct biometric CLI caught error:', cliErr.message);
+      }
+
+      // Hash fallback for identical matching
       const rawQuery = singleImage;
       const queryHash = crypto.createHash('sha256').update(rawQuery || '').digest('hex');
 
@@ -78,7 +128,7 @@ class PythonService {
 
       // If service is offline or unprocessable, return clean unmatched response instead of breaking
       const isConnError = error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT';
-      if (isConnError || error.response?.status === 422 || error.response?.status === 400) {
+      if (isConnError || error.response?.status === 422 || error.response?.status === 400 || error.response?.status === 404) {
         return { matched: false, id: null, user_id: null, confidence: 0 };
       }
 

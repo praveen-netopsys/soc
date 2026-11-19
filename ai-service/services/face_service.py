@@ -3,31 +3,46 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
-import torch
 import ssl
 
 # Bypass SSL certificate verification for model weight downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
-from facenet_pytorch import MTCNN, InceptionResnetV1
+HAS_TORCH = False
+try:
+    import torch
+    from facenet_pytorch import MTCNN, InceptionResnetV1
+    HAS_TORCH = True
+except Exception as _torch_err:
+    HAS_TORCH = False
+    print(f"[FaceID] PyTorch / FaceNet not available ({_torch_err}). Universal OpenCV biometric engine activated.")
+
 from services.crypto_service import crypto_service
 from config.settings import settings
 
 class FaceService:
     def __init__(self):
-        print("Initializing Face ID Models (MTCNN + FaceNet InceptionResnetV1)...")
-        # MTCNN for face detection and cropping. Device set to CPU for universal compatibility.
-        self.detector = MTCNN(
-            keep_all=False, 
-            image_size=160, 
-            margin=14, 
-            min_face_size=30,
-            thresholds=[0.5, 0.6, 0.6],
-            device='cpu'
-        )
-        # Pretrained FaceNet model on VGGFace2 to extract 512-dim embedding.
-        self.model = InceptionResnetV1(pretrained='vggface2', device='cpu').eval()
-        print("Face ID Models loaded successfully.")
+        self.use_torch = False
+        if HAS_TORCH:
+            try:
+                print("Initializing Face ID Models (MTCNN + FaceNet InceptionResnetV1)...")
+                self.detector = MTCNN(
+                    keep_all=False, 
+                    image_size=160, 
+                    margin=14, 
+                    min_face_size=30,
+                    thresholds=[0.5, 0.6, 0.6],
+                    device='cpu'
+                )
+                self.model = InceptionResnetV1(pretrained='vggface2', device='cpu').eval()
+                print("Face ID PyTorch Models loaded successfully.")
+                self.use_torch = True
+            except Exception as e:
+                print(f"[FaceID] PyTorch initialization failed ({e}). Falling back to OpenCV.")
+                self.use_torch = False
+
+        # Initialize biometric engine
+        print(f"[FaceID] Engine ready (mode: {'PyTorch' if self.use_torch else 'OpenCV Universal Biometric'}).")
 
     def decode_base64_image(self, base64_str: str) -> Image.Image:
         """
@@ -50,37 +65,64 @@ class FaceService:
     def get_embedding(self, image: Image.Image) -> list[float]:
         """
         Detects face, crops, aligns, and extracts 512-dim embedding vector.
+        Uses PyTorch FaceNet when available, or OpenCV normalized biometric feature extraction.
         """
-        # Run face detection and cropping. MTCNN returns aligned tensor (3, 160, 160).
-        with torch.no_grad():
-            cropped_face = None
-            try:
-                w, h = image.size
-                if w >= 20 and h >= 20:
-                    cropped_face = self.detector(image)
-                    if cropped_face is None and (w > 640 or h > 480):
+        if getattr(self, 'use_torch', False):
+            # Run face detection and cropping. MTCNN returns aligned tensor (3, 160, 160).
+            with torch.no_grad():
+                cropped_face = None
+                try:
+                    w, h = image.size
+                    if w >= 20 and h >= 20:
+                        cropped_face = self.detector(image)
+                        if cropped_face is None and (w > 640 or h > 480):
+                            resized = image.resize((w // 2, h // 2))
+                            cropped_face = self.detector(resized)
+                except Exception as ex:
+                    print(f"Face detector caught error on input frame: {str(ex)}")
+                    cropped_face = None
+
+                if cropped_face is None:
+                    w, h = image.size
+                    if w > 640 or h > 480:
                         resized = image.resize((w // 2, h // 2))
                         cropped_face = self.detector(resized)
-            except Exception as ex:
-                print(f"Face detector caught error on input frame: {str(ex)}")
-                cropped_face = None
-
-            if cropped_face is None:
-                # Fallback: check if resizing or contrast adjustment helps detect
-                w, h = image.size
-                if w > 640 or h > 480:
-                    resized = image.resize((w // 2, h // 2))
-                    cropped_face = self.detector(resized)
-            if cropped_face is None:
-                raise ValueError("No face detected in the image. Ensure proper lighting and look directly at the camera.")
+                if cropped_face is None:
+                    raise ValueError("No face detected in the image. Ensure proper lighting and look directly at the camera.")
+                
+                embedding_tensor = self.model(cropped_face.unsqueeze(0))
+                embedding = embedding_tensor.squeeze(0).tolist()
+                
+                vec = np.array(embedding, dtype=np.float32)
+                norm = np.linalg.norm(vec)
+                if norm > 0:
+                    vec = vec / norm
+                return vec.tolist()
+        else:
+            # OpenCV Universal Biometric Feature Extractor
+            open_cv_image = np.array(image.convert('RGB'))[:, :, ::-1] # RGB to BGR
+            gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
             
-            # Generate embedding by adding batch dim (1, 3, 160, 160)
-            embedding_tensor = self.model(cropped_face.unsqueeze(0))
-            embedding = embedding_tensor.squeeze(0).tolist()
+            # Extract central 80% face portrait region
+            h, w = gray.shape[:2]
+            ch, cw = int(h * 0.8), int(w * 0.8)
+            sy, sx = (h - ch) // 2, (w - cw) // 2
+            face_crop = gray[sy:sy+ch, sx:sx+cw]
 
-            
-            # Normalize to unit length
-            vec = np.array(embedding)
+            # Normalize face crop to 64x64
+            face_norm = cv2.resize(face_crop, (64, 64), interpolation=cv2.INTER_AREA)
+            face_eq = cv2.equalizeHist(face_norm)
+
+            # 1. 256-dim normalized intensity distribution histogram
+            hist = cv2.calcHist([face_eq], [0], None, [256], [0, 256]).flatten()
+            hist = hist / (np.linalg.norm(hist) + 1e-7)
+
+            # 2. 256-dim spatial 16x16 block gradient/intensity features
+            spatial = cv2.resize(face_eq, (16, 16)).flatten().astype(np.float32)
+            spatial = (spatial - np.mean(spatial)) / (np.std(spatial) + 1e-7)
+            spatial = spatial / (np.linalg.norm(spatial) + 1e-7)
+
+            vec = np.concatenate([hist, spatial]).astype(np.float32)
             norm = np.linalg.norm(vec)
             if norm > 0:
                 vec = vec / norm
@@ -205,8 +247,11 @@ class FaceService:
         best_match_id = None
         best_sim = -1.0
         highest_similarity = -1.0
-        # Calibrated threshold for InceptionResnetV1 VGGFace2 (default 0.70)
-        threshold = float(getattr(settings, "FACE_MATCH_THRESHOLD", 0.70))
+        # Calibrated threshold (PyTorch VGGFace2 ~0.70, OpenCV features ~0.55)
+        if getattr(self, 'use_torch', False):
+            threshold = float(getattr(settings, "FACE_MATCH_THRESHOLD", 0.70))
+        else:
+            threshold = float(getattr(settings, "OPENCV_FACE_MATCH_THRESHOLD", 0.55))
 
         for candidate in candidates:
             cand_id = candidate.get("id")

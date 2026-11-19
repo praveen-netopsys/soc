@@ -1,0 +1,32 @@
+{
+  "verbose": false,
+  "watch": [
+    "Backend/index.js",
+    "Backend/config/",
+    "Backend/controllers/",
+    "Backend/middleware/",
+    "Backend/routes/",
+    "Backend/services/",
+    "Backend/utils/"
+  ],
+  "ignore": [
+    "**/uploads/**",
+    "Backend/uploads/**",
+    "**/backups/**",
+    "Backend/backups/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/*.log",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.mp3",
+    "**/*.wav",
+    "**/*.pptx",
+    "**/*.pdf",
+    "**/*.docx",
+    "**/manifest.json"
+  ],
+  "ext": "js,mjs,json"
+}
+

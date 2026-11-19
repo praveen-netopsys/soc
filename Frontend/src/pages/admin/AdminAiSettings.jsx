@@ -304,9 +304,11 @@ export default function AdminAiSettings() {
         ...currentSession,
         aiName: cleanName,
         wakeWord: cleanWake,
+        aiVoiceGender: voiceGender,
       });
       sessionStorage.setItem('skillbridge_admin', updatedSession);
       localStorage.setItem('skillbridge_admin', updatedSession);
+      localStorage.setItem('skillbridge_ai_voice_gender', voiceGender.toLowerCase());
     } catch (err) {
       console.error('Save AI settings error:', err);
       setStatusMessage({

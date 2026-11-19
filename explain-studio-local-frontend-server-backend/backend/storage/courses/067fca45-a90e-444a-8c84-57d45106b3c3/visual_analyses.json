@@ -1,0 +1,306 @@
+{
+  "1": {
+    "slide_number": 1,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual layout for slide 1: contains structured diagrams and key operational indicators.",
+    "charts_and_data": [
+      "1 embedded visual asset(s)."
+    ],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "2": {
+    "slide_number": 2,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "3": {
+    "slide_number": 3,
+    "has_visual_elements": true,
+    "visual_type": "text",
+    "visual_summary": "No visual slide content was attached to this request; analysis cannot proceed without image data.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "4": {
+    "slide_number": 4,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "5": {
+    "slide_number": 5,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "6": {
+    "slide_number": 6,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Visual layout for slide 6: contains structured diagrams and key operational indicators.",
+    "charts_and_data": [
+      "Structured table data present on slide."
+    ],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "7": {
+    "slide_number": 7,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "8": {
+    "slide_number": 8,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "9": {
+    "slide_number": 9,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "10": {
+    "slide_number": 10,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "11": {
+    "slide_number": 11,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "12": {
+    "slide_number": 12,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "13": {
+    "slide_number": 13,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "14": {
+    "slide_number": 14,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "15": {
+    "slide_number": 15,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating If workplace is classified under either 2nd class or 3rd class \u2013 it is time to put 5S into action..",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "16": {
+    "slide_number": 16,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating A first-class workplace could be achieved \u2026\u2026 If all employees are involved and everyone strives towards a clean, organized workplace..",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "17": {
+    "slide_number": 17,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating Production Scoring Sheet.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "18": {
+    "slide_number": 18,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "19": {
+    "slide_number": 19,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "20": {
+    "slide_number": 20,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "21": {
+    "slide_number": 21,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "22": {
+    "slide_number": 22,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "23": {
+    "slide_number": 23,
+    "has_visual_elements": true,
+    "visual_type": "table",
+    "visual_summary": "Slide contains structured table data with 1 rows/sections.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "24": {
+    "slide_number": 24,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating .",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "25": {
+    "slide_number": 25,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating .",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "26": {
+    "slide_number": 26,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating .",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "27": {
+    "slide_number": 27,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating .",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "28": {
+    "slide_number": 28,
+    "has_visual_elements": false,
+    "visual_type": "text",
+    "visual_summary": "Slide is text-based instructional material.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "29": {
+    "slide_number": 29,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating 5S IS NO EASY.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  },
+  "30": {
+    "slide_number": 30,
+    "has_visual_elements": true,
+    "visual_type": "diagram",
+    "visual_summary": "Visual figures illustrating THANK YOU.",
+    "charts_and_data": [],
+    "process_flow": [],
+    "icons_and_symbols": [],
+    "unextracted_text": []
+  }
+}

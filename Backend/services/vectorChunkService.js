@@ -41,6 +41,24 @@ export class VectorChunkService {
   }
 
   /**
+   * Dynamically retrieves the embedding vector dimension configured in PostgreSQL CourseChunk table.
+   */
+  async getEmbeddingDimension(prisma) {
+    if (this._embeddingDim) return this._embeddingDim;
+    try {
+      const res = await prisma.$queryRawUnsafe(
+        `SELECT atttypmod FROM pg_attribute WHERE attrelid = '"CourseChunk"'::regclass AND attname = 'embedding'`
+      );
+      if (res && res[0] && res[0].atttypmod > 0) {
+        this._embeddingDim = res[0].atttypmod;
+        return this._embeddingDim;
+      }
+    } catch (_) {}
+    this._embeddingDim = 1024;
+    return this._embeddingDim;
+  }
+
+  /**
    * Creates rich, structured semantic knowledge chunks through AI comprehension.
    * AI studies the complete document before chunking, preserving definitions+explanations,
    * concepts+examples, and multi-slide relationships.
@@ -61,6 +79,20 @@ export class VectorChunkService {
 
     if (curriculum && !meta.curriculum) {
       meta.curriculum = curriculum;
+    }
+
+    // Resilient fallback: ensure slides/lessons are available for chunking
+    if ((!meta.slides || meta.slides.length === 0) && meta.curriculum) {
+      if (Array.isArray(meta.curriculum.slides) && meta.curriculum.slides.length > 0) {
+        meta.slides = meta.curriculum.slides;
+      } else if (Array.isArray(meta.curriculum.lessons) && meta.curriculum.lessons.length > 0) {
+        meta.slides = meta.curriculum.lessons.map(l => ({
+          slideNumber: l.slideNumber || l.id,
+          title: l.title,
+          spokenExplanation: l.spokenExplanation || l.explanation || '',
+          bulletPoints: l.keyPoints || l.keyTakeaways || []
+        }));
+      }
     }
 
     const fileName = meta.fileName || 'course_document';
@@ -181,6 +213,36 @@ export class VectorChunkService {
   }
 
   /**
+   * Helper alias to index a course directly from curriculum and targetPrisma
+   */
+  async chunkAndIndexCourse(targetPrisma, courseId, curriculum = null) {
+    let prismaInstance = targetPrisma;
+    let cId = courseId;
+    let curr = curriculum;
+
+    if (typeof targetPrisma === 'string') {
+      cId = targetPrisma;
+      curr = courseId;
+      const { defaultPrisma } = await import('../config/prisma.js');
+      prismaInstance = defaultPrisma;
+    }
+
+    try {
+      const courseRecord = await prismaInstance.course.findUnique({ where: { id: cId } });
+      const fullText = courseRecord?.fileText || '';
+      const docMetadata = {
+        fileName: courseRecord?.fileName || 'presentation',
+        fileType: 'presentation',
+        slides: curr?.slides || []
+      };
+      return await this.indexCourse(prismaInstance, cId, { text: fullText, ...docMetadata }, curr);
+    } catch (err) {
+      console.warn(`[VectorChunkService] chunkAndIndexCourse notice for ${cId}:`, err.message);
+      return [];
+    }
+  }
+
+  /**
    * High-level entry point to index a course's document into PostgreSQL with pgvector embeddings.
    *
    * @param {object} prisma - Prisma client instance.
@@ -199,9 +261,9 @@ export class VectorChunkService {
       fullText = docDataOrText.text;
       docMetadata = {
         fileName: docDataOrText.fileName || 'course_doc',
-        fileType: docDataOrText.fileType || 'document',
-        slides: docDataOrText.slides || [],
-        pages: docDataOrText.pages || []
+        fileType: docDataOrText.fileType || 'presentation',
+        slides: Array.isArray(docDataOrText.slides) ? docDataOrText.slides : [],
+        pages: Array.isArray(docDataOrText.pages) ? docDataOrText.pages : []
       };
       if (pagesOrMeta && typeof pagesOrMeta === 'object' && !Array.isArray(pagesOrMeta)) {
         curriculum = pagesOrMeta;
@@ -214,6 +276,36 @@ export class VectorChunkService {
         slides: [],
         pages: Array.isArray(pagesOrMeta) ? pagesOrMeta : []
       };
+    }
+
+    if (curriculum) {
+      docMetadata.curriculum = curriculum;
+      if (!docMetadata.slides || docMetadata.slides.length === 0) {
+        if (Array.isArray(curriculum.slides) && curriculum.slides.length > 0) {
+          docMetadata.slides = curriculum.slides;
+        } else if (Array.isArray(curriculum.lessons) && curriculum.lessons.length > 0) {
+          docMetadata.slides = curriculum.lessons.map(l => ({
+            slideNumber: l.slideNumber || l.id,
+            title: l.title,
+            spokenExplanation: l.spokenExplanation || l.explanation || '',
+            bulletPoints: l.keyPoints || l.keyTakeaways || [],
+            images: l.image ? [{ id: `img_${l.id}`, name: l.title, url: l.image }] : []
+          }));
+        }
+      }
+    }
+
+    // Auto-populate fullText from slides or lessons if empty
+    if (!fullText || fullText.trim().length < 50) {
+      if (Array.isArray(docMetadata.slides) && docMetadata.slides.length > 0) {
+        fullText = docMetadata.slides
+          .map(s => `Slide ${s.slideNumber}: ${s.title || ''}\n${s.spokenExplanation || s.explanation || (s.bulletPoints || []).join('\n')}`)
+          .join('\n\n');
+      } else if (curriculum && Array.isArray(curriculum.lessons) && curriculum.lessons.length > 0) {
+        fullText = curriculum.lessons
+          .map(l => `Lesson ${l.slideNumber || l.id}: ${l.title || ''}\n${l.spokenExplanation || l.explanation || ''}`)
+          .join('\n\n');
+      }
     }
 
     docMetadata.curriculum = curriculum;
@@ -236,7 +328,8 @@ export class VectorChunkService {
         const conceptPrefix = c.concept ? `[Concept: ${c.concept}] ` : '';
         return `${topicPrefix}${conceptPrefix}${c.chunkText}`;
       });
-      embeddings = await aiService.getEmbeddings(textsToEmbed, 768);
+      const dim = await this.getEmbeddingDimension(prisma);
+      embeddings = await aiService.getEmbeddings(textsToEmbed, dim);
       console.log(`[pgvector] Successfully computed ${embeddings.length} vector embeddings (dim=${embeddings[0]?.length || 0}).`);
     } catch (e) {
       console.warn(`[pgvector] Failed to compute embeddings:`, e.message);
@@ -582,7 +675,8 @@ export class VectorChunkService {
     );
     if (!needEmbed || needEmbed.length === 0) return 0;
 
-    const vectors = await aiService.getEmbeddings(needEmbed.map(r => r.chunkText), 768);
+    const dim = await this.getEmbeddingDimension(prisma);
+    const vectors = await aiService.getEmbeddings(needEmbed.map(r => r.chunkText), dim);
     let updated = 0;
     for (let i = 0; i < needEmbed.length; i++) {
       const vec = vectors[i];
@@ -609,7 +703,8 @@ export class VectorChunkService {
 
     let vectorResults = [];
     try {
-      const queryVector = await aiService.getEmbedding(queryText, 768);
+      const dim = await this.getEmbeddingDimension(prisma);
+      const queryVector = await aiService.getEmbedding(queryText, dim);
       if (queryVector && Array.isArray(queryVector)) {
         vectorResults = await this.searchSimilarChunks(prisma, courseId, queryVector, topK * 2);
       }

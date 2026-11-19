@@ -17,7 +17,19 @@ export const passwordLogin = async (req, res) => {
 
   try {
     const targetPrisma = req.prisma || prisma;
-    const user = await targetPrisma.user.findUnique({ where: { email: cleanEmail } });
+    let user = await targetPrisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user) {
+      // Allow logging in via email, FIN number, or phone number
+      const identifier = String(email).trim();
+      user = await targetPrisma.user.findFirst({
+        where: {
+          OR: [
+            { finNumber: { equals: identifier, mode: 'insensitive' } },
+            { phone: { equals: identifier } },
+          ],
+        },
+      });
+    }
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }

@@ -17,25 +17,30 @@ function dataUrlToBuffer(dataUrl) {
 }
 
 function gatewayBaseUrl() {
-  return String(
+  const url = String(
+    process.env.AI_GATEWAY_URL ||
+    process.env.QWEN_GATEWAY_URL ||
+    process.env.BRUTALLYHIRED_LLM_GATEWAY_URL ||
     process.env.SKILLBRIDGE_LLM_GATEWAY_URL ||
     process.env.LLM_GATEWAY_URL ||
-    process.env.BRUTALLYHIRED_LLM_GATEWAY_URL ||
-    'https://rsvragsvr.tail236357.ts.net'
-  ).trim().replace(/\/+$/, '');
+    ''
+  ).trim();
+  return url ? url.replace(/\/+$/, '') : '';
 }
 
 function gatewayHeaders(extra = {}) {
   const headers = { ...extra };
   const apiKey = (
+    process.env.AI_GATEWAY_API_KEY ||
+    process.env.AI_API_KEY ||
+    process.env.QWEN_API_KEY ||
+    process.env.BRUTALLYHIRED_LLM_API_KEY ||
     process.env.SKILLBRIDGE_LLM_GATEWAY_API_KEY ||
     process.env.LLM_GATEWAY_API_KEY ||
-    process.env.BRUTALLYHIRED_LLM_API_KEY ||
     process.env.VEDA_API_KEY ||
     ''
   ).trim();
   if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
     headers['X-API-Key'] = apiKey;
   }
   return headers;
@@ -213,7 +218,7 @@ export async function ocrFallback(images) {
     if (worker) {
       try {
         await worker.terminate();
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }

@@ -400,9 +400,27 @@ export default function AdminManagement() {
                     </div>
                     <input
                       type="tel"
+                      inputMode="tel"
+                      pattern="[0-9+ -]*"
                       placeholder={form.country ? `e.g. ${getCountryDialCode(form.country)} 9123 4567` : 'e.g. +65 9123 4567'}
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (
+                          !/[0-9+ -]/.test(e.key) &&
+                          !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key) &&
+                          !e.ctrlKey &&
+                          !e.metaKey
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => {
+                        let cleaned = e.target.value.replace(/[^\d+ -]/g, '');
+                        if (cleaned.includes('+')) {
+                          cleaned = (cleaned.startsWith('+') ? '+' : '') + cleaned.replace(/\+/g, '');
+                        }
+                        setForm({ ...form, phone: cleaned });
+                      }}
                       className="w-full px-3.5 py-2.5 bg-ink/60 border border-line rounded-xl text-xs text-fg focus:outline-none focus:border-sky focus:bg-panel"
                     />
                     <p className="text-[11px] text-muted mt-1">

@@ -1,4 +1,5 @@
 import masterPrisma from '../../config/masterPrisma.js';
+import tenantService from '../../services/tenantService.js';
 
 /**
  * Get AI Tutor and Wake Word settings for the authenticated company
@@ -109,7 +110,29 @@ export const updateAiSettings = async (req, res) => {
  */
 export const getPublicCompanyAiSettings = async (req, res) => {
   try {
-    const tenantCode = req.query.code || req.headers['x-tenant-id'] || req.tenantCode || 'default';
+    let tenantCode = req.query.code || req.headers['x-tenant-id'] || req.tenantCode || null;
+    const courseId = req.query.courseId;
+
+    if ((!tenantCode || tenantCode === 'default') && courseId) {
+      try {
+        const companies = await masterPrisma.company.findMany({ select: { code: true } }).catch(() => []);
+        for (const comp of companies) {
+          try {
+            const tenantPrisma = await tenantService.getTenantClient(comp.code);
+            const found = await tenantPrisma.course.findUnique({
+              where: { id: String(courseId) },
+              select: { id: true }
+            });
+            if (found) {
+              tenantCode = comp.code;
+              break;
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+    if (!tenantCode) tenantCode = 'default';
+
     const rows = await masterPrisma.$queryRawUnsafe(
       `SELECT "id", "name", "code", "aiName", "wakeWord", "aiVoiceGender", "aiVoiceName", "aiVoiceRate", "aiVoicePitch"
        FROM "Company"

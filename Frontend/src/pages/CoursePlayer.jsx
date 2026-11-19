@@ -6,6 +6,8 @@ import { persistLanguageSelection, readStoredLanguageCode, textMatchesLanguage }
 import { cleanUnsupportedWords, cleanForSpeech as cleanSpeechUtil, stripSlidePlaceholders } from '../utils/textCleaner'
 import { buildTeacherLectureSentences } from '../utils/teacherNarrator'
 import { getStudentUser } from '../utils/authSession'
+import LipSyncAvatar from '../components/player/LipSyncAvatar'
+import { haltAllSkillBridgeAudio } from '../utils/audioHalt'
 
 const CourseBookIcon = ({ className = "h-5 w-5" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -57,46 +59,6 @@ const normalizeLanguageCode = (pref) => {
 const lessonExplanationClientCache = new Map();
 // Audio/Utterance cache pool for pre-warmed concepts (Key: `${courseId}_${lessonId}_${conceptIndex}`)
 const ttsUtterancePool = new Map();
-
-export const haltAllSkillBridgeAudio = () => {
-  try {
-    if (window._skillbridgeCurrentAudio) {
-      const audio = window._skillbridgeCurrentAudio;
-      audio.onended = null;
-      audio.onerror = null;
-      audio.onplay = null;
-      audio.onpause = null;
-      audio.ontimeupdate = null;
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = '';
-      window._skillbridgeCurrentAudio = null;
-    }
-  } catch (e) { }
-
-  if (window._skillbridgeResumeInterval) {
-    clearInterval(window._skillbridgeResumeInterval);
-    window._skillbridgeResumeInterval = null;
-  }
-
-  try {
-    if (window._skillbridgeCurrentUtterance) {
-      window._skillbridgeCurrentUtterance.onstart = null;
-      window._skillbridgeCurrentUtterance.onend = null;
-      window._skillbridgeCurrentUtterance.onerror = null;
-      window._skillbridgeCurrentUtterance.onpause = null;
-      window._skillbridgeCurrentUtterance.onresume = null;
-      window._skillbridgeCurrentUtterance = null;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.pause();
-      window.speechSynthesis.cancel();
-      try { window.speechSynthesis.resume(); } catch (_) { }
-      window.speechSynthesis.cancel();
-    }
-  } catch (e) { }
-};
 
 const CoursePlayer = ({
   course,
@@ -263,9 +225,15 @@ const CoursePlayer = ({
 
   const handleLanguageChange = (newLangCode) => {
     const langObj = LANGUAGES.find(l => l.value === newLangCode) || LANGUAGES[0]
-    setSelectedLanguageCode(langObj.value)
+    const targetLang = langObj.value
+    setSelectedLanguageCode(targetLang)
     ttsUtterancePool.clear()
-    persistLanguageSelection(langObj.value)
+    persistLanguageSelection(targetLang)
+
+    const newSpeechLang = SPEECH_LANGUAGES[targetLang] || 'en-US'
+    if (voiceManagerRef.current) {
+      voiceManagerRef.current.setLanguage(newSpeechLang)
+    }
 
     window.speechSynthesis.cancel()
     setCurrentSentenceIdx(0)
@@ -276,10 +244,48 @@ const CoursePlayer = ({
 
     setChatMessages((prev) => {
       if (prev.length <= 1) {
-        return [{ sender: 'aria', text: GREETINGS[langObj.value] || GREETINGS.en }]
+        return [{ sender: 'aria', text: GREETINGS[targetLang] || GREETINGS.en }]
       }
       return prev
     })
+
+    const wasPlaying = playingRef.current
+    if (audioRef.current && isInteractiveCourse) {
+      try { audioRef.current.pause(); } catch (e) {}
+      setIsAriaSpeaking(false)
+      isAriaSpeakingRef.current = false
+      const slideNum = activeLessonRef.current?.sourceSlides?.[0] || activeLessonRef.current?.id || currentSlideNum || 1
+      const audioUrl = api.getCourseSlideAudioUrl(course?.id, slideNum, targetLang, voiceGender) + `&t=${Date.now()}`
+      audioRef.current.src = audioUrl
+      audioRef.current.load()
+      if (wasPlaying) {
+        const playPromise = audioRef.current.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsAriaSpeaking(true)
+              isAriaSpeakingRef.current = true
+              setPipelineState('PLAYING')
+            })
+            .catch((err) => {
+              console.debug('[CoursePlayer] Language switch play error, will resume on canplay:', err)
+              const resumeOnCanPlay = () => {
+                audioRef.current?.removeEventListener('canplay', resumeOnCanPlay)
+                if (playingRef.current && audioRef.current) {
+                  audioRef.current.play()
+                    .then(() => {
+                      setIsAriaSpeaking(true)
+                      isAriaSpeakingRef.current = true
+                      setPipelineState('PLAYING')
+                    })
+                    .catch(() => {})
+                }
+              }
+              audioRef.current?.addEventListener('canplay', resumeOnCanPlay, { once: true })
+            })
+        }
+      }
+    }
   }
 
   // Save last played course ID
@@ -523,7 +529,7 @@ const CoursePlayer = ({
   // Universal Document Viewer States (PowerPoint / PDF Slides)
   const [currentPageNum, setCurrentPageNum] = useState(1)
   const [zoomLevel, setZoomLevel] = useState(1)
-  const [fitToWidth, setFitToWidth] = useState(true)
+  const [fitToWidth, setFitToWidth] = useState(false)
   const [slideImageLoadError, setSlideImageLoadError] = useState(false)
   const [tutorGuidance, setTutorGuidance] = useState({
     keyPoints: [],
@@ -570,12 +576,98 @@ const CoursePlayer = ({
   const [isAriaSpeaking, setIsAriaSpeaking] = useState(false)
   const [aiTutorName, setAiTutorName] = useState('ARIA')
   const [aiWakeWord, setAiWakeWord] = useState('Hey ARIA')
-  const [aiVoiceConfig, setAiVoiceConfig] = useState({
-    gender: 'female',
-    voiceName: '',
-    rate: 0.95,
-    pitch: 1.0
+  const [voiceGender, setVoiceGender] = useState(() => {
+    if (course?.aiVoiceGender) return String(course.aiVoiceGender).toLowerCase() === 'female' ? 'female' : 'male';
+    if (course?.company?.aiVoiceGender) return String(course.company.aiVoiceGender).toLowerCase() === 'female' ? 'female' : 'male';
+    try {
+      const adminSession = JSON.parse(sessionStorage.getItem('skillbridge_admin') || localStorage.getItem('skillbridge_admin') || 'null');
+      if (adminSession?.aiVoiceGender) return String(adminSession.aiVoiceGender).toLowerCase() === 'female' ? 'female' : 'male';
+    } catch (_) {}
+    return 'female';
   })
+  const [renderMode, setRenderMode] = useState('image')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxZoom, setLightboxZoom] = useState(1.0)
+  const [showExplanationScript, setShowExplanationScript] = useState(false)
+  const preloadAudioRef = useRef(null)
+
+  const [aiVoiceConfig, setAiVoiceConfig] = useState(() => {
+    const initGender = course?.aiVoiceGender || course?.company?.aiVoiceGender || 'FEMALE';
+    const norm = String(initGender).toLowerCase() === 'female' ? 'female' : 'male';
+    return {
+      gender: norm,
+      voiceName: norm === 'female' ? 'en-US-JennyNeural' : 'en-US-ChristopherNeural',
+      rate: 0.95,
+      pitch: 1.0
+    };
+  })
+
+  const handleVoiceGenderChange = (gender) => {
+    const norm = String(gender).toLowerCase() === 'female' ? 'female' : 'male'
+    setVoiceGender(norm)
+    setAiVoiceConfig(prev => ({ ...prev, gender: norm }))
+    const wasPlaying = playingRef.current
+    if (audioRef.current && isInteractiveCourse) {
+      try { audioRef.current.pause(); } catch (e) {}
+      setIsAriaSpeaking(false)
+      isAriaSpeakingRef.current = false
+      const slideNum = activeLessonRef.current?.sourceSlides?.[0] || activeLessonRef.current?.id || currentSlideNum || 1
+      const audioUrl = api.getCourseSlideAudioUrl(course?.id, slideNum, selectedLanguageCode, norm) + `&t=${Date.now()}`
+      audioRef.current.src = audioUrl
+      audioRef.current.load()
+      if (wasPlaying) {
+        const playPromise = audioRef.current.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsAriaSpeaking(true)
+              isAriaSpeakingRef.current = true
+              setPipelineState('PLAYING')
+            })
+            .catch((err) => {
+              console.debug('[CoursePlayer] Gender switch play error, will resume on canplay:', err)
+              const resumeOnCanPlay = () => {
+                audioRef.current?.removeEventListener('canplay', resumeOnCanPlay)
+                if (playingRef.current && audioRef.current) {
+                  audioRef.current.play()
+                    .then(() => {
+                      setIsAriaSpeaking(true)
+                      isAriaSpeakingRef.current = true
+                      setPipelineState('PLAYING')
+                    })
+                    .catch(() => {})
+                }
+              }
+              audioRef.current?.addEventListener('canplay', resumeOnCanPlay, { once: true })
+            })
+        }
+      }
+    }
+  }
+
+  const audioRef = useRef(null)
+  const [audioDuration, setAudioDuration] = useState(0)
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
+  const [audioVolume, setAudioVolume] = useState(1.0)
+
+  const isInteractiveCourse = useMemo(() => {
+    return Boolean(
+      course?.isInteractivePresentation ||
+      course?.curriculum?.isInteractivePresentation ||
+      course?.curriculumData?.isInteractivePresentation ||
+      (Array.isArray(course?.curriculum?.slides) && course.curriculum.slides.length > 0) ||
+      (Array.isArray(course?.lessons) && course.lessons.some(l => l.audioUrls && Object.keys(l.audioUrls).length > 0))
+    )
+  }, [course])
+
+  const formatPlayerTime = (secs) => {
+    if (isNaN(secs) || secs < 0) return '0:00'
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m}:${s < 10 ? '0' : ''}${s}`
+  }
 
   // Dynamic Viseme Lip-Sync and Google Voice Pacing states
   const [activeSpokenWord, setActiveSpokenWord] = useState('')
@@ -583,32 +675,38 @@ const CoursePlayer = ({
   const speechTimeoutRef = useRef(null)
   const watchdogRef = useRef(null)
 
-  // Fetch company AI Tutor and custom wake word configuration
+  // Fetch company AI Tutor and custom wake word configuration (honors admin default voice gender)
   useEffect(() => {
     let isMounted = true
-    api.getCompanyAiSettings().then((settings) => {
-      if (isMounted && settings?.aiName) {
-        setAiTutorName(settings.aiName)
-        setAiWakeWord(settings.wakeWord || `Hey ${settings.aiName}`)
-        if (settings.aiVoiceGender || settings.aiVoiceName || settings.aiVoiceRate) {
-          setAiVoiceConfig({
-            gender: (settings.aiVoiceGender || 'female').toLowerCase(),
-            voiceName: settings.aiVoiceName || '',
-            rate: typeof settings.aiVoiceRate === 'number' ? settings.aiVoiceRate : 0.95,
-            pitch: typeof settings.aiVoicePitch === 'number' ? settings.aiVoicePitch : 1.0
-          })
+    const tenantCode = course?.tenantCode || course?.companyCode || course?.tenantId || null
+    api.getCompanyAiSettings(tenantCode, course?.id).then((settings) => {
+      if (isMounted && settings) {
+        if (settings.aiName) {
+          setAiTutorName(settings.aiName)
+          setAiWakeWord(settings.wakeWord || `Hey ${settings.aiName}`)
+        }
+        if (settings.aiVoiceGender) {
+          const adminGender = String(settings.aiVoiceGender).toLowerCase() === 'female' ? 'female' : 'male'
+          setVoiceGender(adminGender)
+          setAiVoiceConfig(prev => ({
+            ...prev,
+            gender: adminGender,
+            voiceName: settings.aiVoiceName || prev.voiceName,
+            rate: typeof settings.aiVoiceRate === 'number' ? settings.aiVoiceRate : prev.rate,
+            pitch: typeof settings.aiVoicePitch === 'number' ? settings.aiVoicePitch : prev.pitch
+          }))
         }
         setChatMessages(prev => {
           if (prev.length === 1 && prev[0].sender === 'aria') {
             const template = GREETINGS[selectedLanguageCode] || GREETINGS.en
-            return [{ sender: 'aria', text: template.replace(/ARIA/g, settings.aiName) }]
+            return [{ sender: 'aria', text: template.replace(/ARIA/g, settings.aiName || 'ARIA') }]
           }
           return prev
         })
       }
     }).catch(() => {})
     return () => { isMounted = false }
-  }, [selectedLanguageCode])
+  }, [course?.id, selectedLanguageCode])
 
 
   const requestPlayerFullscreen = () => {
@@ -654,12 +752,10 @@ const CoursePlayer = ({
   }, [])
 
   useEffect(() => {
-    if (playing) {
-      setChatCollapsed(true)
-    } else if (!isFullscreen) {
-      setChatCollapsed(false)
+    if (isFullscreen) {
+      setChatCollapsed(true);
     }
-  }, [playing, isFullscreen])
+  }, [isFullscreen]);
 
   const voiceManagerRef = useRef(null)
   const wasPlayingRef = useRef(false)
@@ -1166,7 +1262,8 @@ const CoursePlayer = ({
           );
           const vm = voiceManagerRef.current;
           if (vm) {
-            vm.ttsMutedUntil = 0;
+            // Buffer 350ms so mic does not catch speaker acoustic decay of the greeting
+            vm.ttsMutedUntil = Date.now() + 350;
             vm.setState(TutorState.ACTIVE_LISTENING);
             vm.resetFollowUpTimeout();
             try {
@@ -1304,7 +1401,17 @@ const CoursePlayer = ({
       return
     }
 
-    const cleanQuestion = extractQuestionFromWakeWord(rawSpeech) || rawSpeech
+    let cleanQuestion = extractQuestionFromWakeWord(rawSpeech, aiWakeWord, aiTutorName) || rawSpeech
+    // Strip any tutor greeting echoes at the start of the question (e.g. "Yes, I'm listening what is safe working procedure")
+    cleanQuestion = cleanQuestion
+      .replace(/^(?:(?:yes|yeah|ya)?\s*,?\s*(?:tell\s+me|i'?m\s+listening|i\s+am\s+listening|listening|please\s+tell\s+me|im\s+listening)\s*[,.:!?-]*\s*)+/iu, '')
+      .replace(/^(?:我在听[，,、？?]?\s*(?:请问有什么可以帮您|请问|请讲)?[，,、？?.:!?-]*\s*)+/iu, '')
+      .replace(/^(?:(?:ya|baik)?\s*,?\s*(?:saya\s+mendengar|sila\s+beritahu(?:\s+saya)?)\s*[,.:!?-]*\s*)+/iu, '')
+      .replace(/^(?:(?:சொல்லுங்கள்|நான்\s*கேட்கிறேன்|சொல்லுங்கள்\s*நான்\s*கேட்கிறேன்)\s*[,.:!?-]*\s*)+/iu, '')
+      .replace(/^(?:(?:হ্যাঁ\s*বলুন|আমি\s*শুনছি|বলুন\s*আমি\s*শুনছি)\s*[,.:!?-]*\s*)+/iu, '')
+      .replace(/^(?:(?:చెప్పండి|నేను\s*వింటున్నాను|చెప్పండి\s*నేను\s*వింటున్నాను)\s*[,.:!?-]*\s*)+/iu, '')
+      .trim()
+
     if (!cleanQuestion || cleanQuestion.length < 3 || isNoiseOrHallucination(cleanQuestion)) {
       return
     }
@@ -1317,10 +1424,14 @@ const CoursePlayer = ({
       return
     }
 
-    // Require substance: questions must have at least 2 distinct words or a direct inquiry word
-    const cleanWords = cleanQuestion.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean)
+    // Require substance: questions must have at least 2 distinct words, or direct inquiry word, or substantive Indic/CJK characters
+    const cleanWords = cleanQuestion.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').split(/\s+/).filter(Boolean)
     const cleanUnique = new Set(cleanWords)
-    if (cleanWords.length < 2 && !['why', 'how', 'what', 'who', 'when', 'where', 'help', 'explain'].includes(cleanWords[0])) {
+    const isDirectInquiry = ['why', 'how', 'what', 'who', 'when', 'where', 'help', 'explain'].includes(cleanWords[0])
+      || /(?:什么是|为什么|怎么|如何|请问|apa|mengapa|bagaimana|bila|என்ன|ஏன்|எப்படி|কী|কেন|কিভাবে|ఎందుకు|ఏమిటి|ఎలా)/iu.test(cleanQuestion)
+    const isCjkOrIndic = /[\p{Script=Han}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Bengali}]/u.test(cleanQuestion)
+
+    if (cleanWords.length < 2 && !isDirectInquiry && (!isCjkOrIndic || cleanQuestion.trim().length < 2)) {
       console.log(`[VOICE:REJECT] Single-word non-question rejected: "${cleanQuestion}"`)
       return
     }
@@ -1393,21 +1504,24 @@ const CoursePlayer = ({
         }
       })
     } catch (err) {
-      console.error('[VOICE] ARIA AI Tutor chat error:', err)
-      setChatMessages((prev) => [...prev, { sender: 'aria', text: `⚠️ ${err.message || 'The AI tutor is temporarily unavailable. Please try again in a moment.'}` }])
+      console.warn('[VOICE] ARIA AI Tutor chat notice:', err)
+      const safeVoiceFallback = 'In this lesson, we focus on core operating procedures and safety compliance. Please let me know what specific point you would like me to explain.'
+      setChatMessages((prev) => [...prev, { sender: 'aria', text: safeVoiceFallback }])
       isAnsweringRef.current = false
       setTimeout(() => {
-        if (wasLecturePlayingRef.current) {
-          const resumePhrase = RESUME_COURSE_PHRASES[selectedLanguageCode] || RESUME_COURSE_PHRASES.en
-          setVoiceStatusText(`▶️ ${resumePhrase}`)
-          speakAriaAnswer(resumePhrase, () => {
-            resumeLectureFromExactPosition()
+        speakAriaAnswer(safeVoiceFallback, () => {
+          if (wasLecturePlayingRef.current) {
+            const resumePhrase = RESUME_COURSE_PHRASES[selectedLanguageCode] || RESUME_COURSE_PHRASES.en
+            setVoiceStatusText(`▶️ ${resumePhrase}`)
+            speakAriaAnswer(resumePhrase, () => {
+              resumeLectureFromExactPosition()
+              voiceManagerRef.current?.returnToSleep()
+            })
+          } else {
             voiceManagerRef.current?.returnToSleep()
-          })
-        } else {
-          voiceManagerRef.current?.returnToSleep()
-        }
-      }, 1000)
+          }
+        })
+      }, 400)
     } finally {
       setChatLoading(false)
     }
@@ -1432,6 +1546,8 @@ const CoursePlayer = ({
       followUpTimeoutMs: 12000,
       aiName: aiTutorName,
       wakeWord: aiWakeWord,
+      language: speechRecognitionLang,
+      langCode: speechRecognitionLang,
       onWakeWordDetected: (wakePhrase) => {
         if (!isMountedRef.current) return;
         console.log(`[VOICE:WAKE_MATCH] Wake phrase received: "${wakePhrase}". Transitioning to greeting...`)
@@ -1727,7 +1843,9 @@ const CoursePlayer = ({
 
       // 2. Check if already present on activeLesson from course payload
       const propCached = activeLesson.explanations?.[langCode] ||
-        (langCode === 'en' ? activeLesson.explanation : null);
+        (langCode === 'zh' ? activeLesson.explanations?.['zh-CN'] : null) ||
+        (langCode === 'zh-CN' ? activeLesson.explanations?.['zh'] : null) ||
+        (langCode === 'en' ? (activeLesson.spokenExplanation || activeLesson.explanation) : null);
 
       const candidateScript = memoryCached || (typeof propCached === 'string' && propCached.length > 30 ? propCached : null);
       const immediateScript = (candidateScript && textMatchesLanguage(candidateScript, langCode))
@@ -1859,11 +1977,16 @@ const CoursePlayer = ({
       return null;
     }
     if (typeof url === 'string') {
-      if (url.startsWith('data:')) return url;
-      if (url.startsWith('http://') || url.startsWith('https://')) return url;
-      if (url.startsWith('/api')) {
-        return url;
+      let cleaned = url;
+      if (cleaned.includes('__COURSE_ID__') && course?.id) {
+        cleaned = cleaned.replace(/__COURSE_ID__/g, course.id);
       }
+      if (cleaned.startsWith('data:')) return cleaned;
+      if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+      if (cleaned.startsWith('/api')) {
+        return cleaned;
+      }
+      return cleaned;
     }
     return url;
   };
@@ -1980,7 +2103,7 @@ const CoursePlayer = ({
   // Synchronize currentPageNum when activeLesson changes
   useEffect(() => {
     if (activeLesson) {
-      const pageNum = activeLesson.sourceSlides?.[0] || (course?.lessons ? course.lessons.findIndex(l => l.id === activeLesson.id) + 1 : 1);
+      const pageNum = activeLesson.sourceSlides?.[0] || (course?.lessons ? course.lessons.findIndex(l => String(l.id) === String(activeLesson.id)) + 1 : 1);
       if (pageNum && pageNum !== currentPageNum) {
         setCurrentPageNum(pageNum);
       }
@@ -1994,11 +2117,12 @@ const CoursePlayer = ({
 
     const matchingLesson = course?.lessons?.find(l => {
       const s = Array.isArray(l.sourceSlides) ? l.sourceSlides : [l.id];
-      return s.includes(targetPageNum);
+      return s.some(num => Number(num) === Number(targetPageNum));
     });
 
-    if (matchingLesson && matchingLesson.id !== activeLessonId) {
+    if (matchingLesson && String(matchingLesson.id) !== String(activeLessonId)) {
       setActiveLessonId(matchingLesson.id);
+      setActiveLesson(matchingLesson);
       setCurrentSentenceIdx(0);
       setElapsedSeconds(0);
       setPlaying(true);
@@ -2026,38 +2150,104 @@ const CoursePlayer = ({
     }
   };
 
-  const getRealLessonDurationStr = (lesson, activeExp = null, idx = 0) => {
-    // Check active loaded explanation, or the lesson's stored explanation
-    const expText = (activeExp && activeExp.length > 30)
-      ? activeExp
-      : (lesson?.explanation || lesson?.explanations?.en || '');
+  const goToPreviousSlide = () => {
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch (e) {}
+    }
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    const currentIdx = course?.lessons?.findIndex(l => String(l.id) === String(activeLesson?.id)) ?? -1;
+    if (currentIdx > 0 && course?.lessons?.[currentIdx - 1]) {
+      const prevL = course.lessons[currentIdx - 1];
+      setActiveLessonId(prevL.id);
+      setActiveLesson(prevL);
+      setCurrentSentenceIdx(0);
+      setElapsedSeconds(0);
+      playingRef.current = true;
+      setPlaying(true);
+      if (typeof keystrokeNavigatePage === 'function') {
+        keystrokeNavigatePage(Math.max(1, currentPageNum - 1));
+      }
+    } else if (currentPageNum > 1) {
+      handleNavigatePage(currentPageNum - 1);
+    }
+  };
 
-    if (expText && expText.length > 30) {
-      const words = expText.split(/\s+/).length;
-      const secs = Math.max(60, Math.min(240, Math.round(words / 2.2)));
-      const m = Math.floor(secs / 60).toString().padStart(2, '0');
-      const s = Math.floor(secs % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
+  const goToNextSlide = () => {
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch (e) {}
+    }
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    const currentIdx = course?.lessons?.findIndex(l => String(l.id) === String(activeLesson?.id)) ?? -1;
+    if (currentIdx >= 0 && currentIdx < (course?.lessons?.length || 0) - 1 && course?.lessons?.[currentIdx + 1]) {
+      const nextL = course.lessons[currentIdx + 1];
+      setActiveLessonId(nextL.id);
+      setActiveLesson(nextL);
+      setCurrentSentenceIdx(0);
+      setElapsedSeconds(0);
+      playingRef.current = true;
+      setPlaying(true);
+      if (typeof keystrokeNavigatePage === 'function') {
+        keystrokeNavigatePage(Math.min(totalPages, currentPageNum + 1));
+      }
+    } else if (currentPageNum < totalPages) {
+      handleNavigatePage(currentPageNum + 1);
+    }
+  };
+
+  const replaySlide = () => {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    setCurrentSentenceIdx(0);
+    setElapsedSeconds(0);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
+    setPlaying(true);
+  };
+
+  const getRealLessonDurationStr = (lesson, activeExp = null, idx = 0) => {
+    // 1. If this is the active lesson and audio has loaded its duration, return exact audio duration
+    if (lesson?.id === activeLesson?.id && audioDuration > 0) {
+      return formatPlayerTime(audioDuration);
     }
 
+    // 2. Check exact durationSeconds metadata from backend or slide metadata
+    const exactSecs = lesson?.durationSeconds ||
+      lesson?.durations_seconds?.[selectedLanguageCode] ||
+      lesson?.durationsSeconds?.[selectedLanguageCode] ||
+      lesson?.durations_seconds?.en ||
+      lesson?.durationsSeconds?.en;
+
+    if (typeof exactSecs === 'number' && exactSecs > 0) {
+      return formatPlayerTime(exactSecs);
+    }
+
+    // 3. Stored duration string (e.g. "01:14" or "00:20")
     if (lesson?.duration) {
       const str = String(lesson.duration).trim();
       if (str.includes(':')) {
         const parts = str.split(':').map(p => parseInt(p, 10) || 0);
         const totalSecs = parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0] * 3600 + parts[1] * 60 + parts[2];
-        if (totalSecs > 0 && totalSecs <= 300) {
-          const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-          const s = Math.floor(totalSecs % 60).toString().padStart(2, '0');
-          return `${m}:${s}`;
+        if (totalSecs > 0) {
+          return formatPlayerTime(totalSecs);
         }
       }
     }
 
-    // Deterministic fallback
-    const baseSecs = 65 + ((idx * 17) % 55);
-    const m = Math.floor(baseSecs / 60).toString().padStart(2, '0');
-    const s = Math.floor(baseSecs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
+    // 4. Natural speech estimation (~140 wpm = 2.3 words/sec)
+    const expText = (activeExp && activeExp.length > 20)
+      ? activeExp
+      : (lesson?.explanation || lesson?.explanations?.[selectedLanguageCode] || lesson?.explanations?.en || '');
+
+    if (expText && expText.length > 10) {
+      const words = expText.split(/\s+/).filter(Boolean).length;
+      const secs = Math.max(8, Math.round(words / 2.3));
+      return formatPlayerTime(secs);
+    }
+
+    // 5. Default natural lesson duration
+    const baseSecs = 20 + ((idx * 7) % 25);
+    return formatPlayerTime(baseSecs);
   };
 
   const parseDurationSeconds = (durationStr) => {
@@ -2149,9 +2339,12 @@ const CoursePlayer = ({
   }, [loadingExplanation, elapsedSeconds, totalSeconds, activeRealDurationStr]);
 
   const utteranceRef = useRef(null);
+  const isAudioPlayingIntentRef = useRef(false);
 
   const handleTogglePlay = () => {
     if (!playing) {
+      playingRef.current = true;
+      setPlaying(true);
       if (currentSentenceIdx >= sentences.length - 1 && elapsedSeconds >= totalSeconds - 1) {
         setCurrentSentenceIdx(0);
         currentSentenceIdxRef.current = 0;
@@ -2162,14 +2355,59 @@ const CoursePlayer = ({
         window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
       } catch (e) { }
-      setPlaying(true);
-      setChatCollapsed(true);
-      requestPlayerFullscreen();
+
+      // Resume suspended Web Audio context immediately inside user click gesture
+      if (typeof window !== 'undefined' && window._skillbridgeAudioContext && window._skillbridgeAudioContext.state === 'suspended') {
+        window._skillbridgeAudioContext.resume().catch(() => {});
+      }
+
+      // Direct synchronous audio play on user click gesture (prevents browser autoplay block on first click)
+      if (audioRef.current && isInteractiveCourse) {
+        const audio = audioRef.current;
+        window._skillbridgeCurrentAudio = audio;
+        const targetUrl = currentAudioUrl ? new URL(currentAudioUrl, window.location.origin).href : '';
+        if (targetUrl && audio.src !== targetUrl) {
+          audio.src = currentAudioUrl;
+        }
+        isAudioPlayingIntentRef.current = true;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            setIsAriaSpeaking(true);
+            isAriaSpeakingRef.current = true;
+            setPipelineState('PLAYING');
+          }).catch((err) => {
+            isAudioPlayingIntentRef.current = false;
+            console.debug('[CoursePlayer] Audio playback click gesture:', err);
+            // If play was pending metadata or interrupted by initial load, safely play on canplay
+            if (audio.readyState < 2) {
+              const onCanPlay = () => {
+                audio.removeEventListener('canplay', onCanPlay);
+                if (playingRef.current) {
+                  audio.play().then(() => {
+                    setIsAriaSpeaking(true);
+                    isAriaSpeakingRef.current = true;
+                    setPipelineState('PLAYING');
+                  }).catch(() => {});
+                }
+              };
+              audio.addEventListener('canplay', onCanPlay, { once: true });
+            }
+          });
+        }
+      }
     } else {
+      playingRef.current = false;
+      setPlaying(false);
+      isAudioPlayingIntentRef.current = false;
       try {
         window.speechSynthesis.cancel();
       } catch (e) { }
-      setPlaying(false);
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+      setIsAriaSpeaking(false);
+      isAriaSpeakingRef.current = false;
       if (activeLesson?.id && !isLessonDone(activeLesson.id)) {
         saveLessonPlayback(activeLesson.id, currentSentenceIdxRef.current, elapsedSecondsRef.current);
       }
@@ -2196,9 +2434,9 @@ const CoursePlayer = ({
 
   const handleTakeChapterAssessmentRef = useRef(null);
 
-  // Speech TTS handler with clean speech text and natural Google Voice human cadence
+  // Speech TTS handler with clean speech text and natural Google Voice human cadence (Fallback for non-interactive legacy courses)
   useEffect(() => {
-    if (playing && !muted && !loadingExplanation && sentences.length > 0) {
+    if (!isInteractiveCourse && playing && !muted && !loadingExplanation && sentences.length > 0) {
       let isCancelled = false;
 
       const speak = (idx) => {
@@ -2212,7 +2450,7 @@ const CoursePlayer = ({
             markLessonCompleted(activeLesson.id);
           }
 
-          const currentIdx = course.lessons.findIndex(l => l.id === activeLesson?.id);
+          const currentIdx = course.lessons.findIndex(l => String(l.id) === String(activeLesson?.id));
           const nextLesson = course.lessons[currentIdx + 1];
           const currentModule = activeLesson?.moduleTitle || activeLesson?.chapterTitle || '';
           const nextModule = nextLesson?.moduleTitle || nextLesson?.chapterTitle || '';
@@ -2453,6 +2691,140 @@ const CoursePlayer = ({
     }
   }, [playing, muted, sentences, loadingExplanation, activeLesson?.id, selectedLanguageCode, preferredVoiceLangCode, aiVoiceConfig]);
 
+  // Synchronize neural audio playback speed and volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+      audioRef.current.volume = isAudioMuted ? 0 : audioVolume;
+    }
+  }, [playbackSpeed, audioVolume, isAudioMuted]);
+
+  const currentSlideNum = useMemo(() => {
+    if (Array.isArray(activeLesson?.sourceSlides) && activeLesson.sourceSlides.length > 0) {
+      const s = Number(activeLesson.sourceSlides[0]);
+      if (!isNaN(s) && s > 0) return s;
+    }
+    if (activeLesson?.slideNumber && !isNaN(Number(activeLesson.slideNumber))) {
+      return Number(activeLesson.slideNumber);
+    }
+    if (activeLesson?.slide_number && !isNaN(Number(activeLesson.slide_number))) {
+      return Number(activeLesson.slide_number);
+    }
+    if (Array.isArray(course?.lessons) && course.lessons.length > 0) {
+      const idx = course.lessons.findIndex(l => String(l.id) === String(activeLesson?.id));
+      if (idx !== -1) return idx + 1;
+    }
+    if (currentPageNum && !isNaN(Number(currentPageNum)) && Number(currentPageNum) > 0) {
+      return Number(currentPageNum);
+    }
+    return 1;
+  }, [activeLesson, course?.lessons, currentPageNum]);
+
+  const currentAudioUrl = useMemo(() => {
+    if (!course?.id) return '';
+    return api.getCourseSlideAudioUrl(course.id, currentSlideNum, selectedLanguageCode, voiceGender);
+  }, [course?.id, currentSlideNum, selectedLanguageCode, voiceGender]);
+
+  const nextSlideNum = useMemo(() => {
+    if (!course?.lessons || !Array.isArray(course.lessons)) return null;
+    const currentIdx = course.lessons.findIndex(l => String(l.id) === String(activeLesson?.id));
+    if (currentIdx >= 0 && currentIdx < course.lessons.length - 1) {
+      const nextL = course.lessons[currentIdx + 1];
+      if (Array.isArray(nextL?.sourceSlides) && nextL.sourceSlides.length > 0) {
+        const s = Number(nextL.sourceSlides[0]);
+        if (!isNaN(s) && s > 0) return s;
+      }
+      if (nextL?.slideNumber && !isNaN(Number(nextL.slideNumber))) {
+        return Number(nextL.slideNumber);
+      }
+      return currentIdx + 2;
+    }
+    return null;
+  }, [course?.lessons, activeLesson?.id]);
+
+  const nextAudioUrl = useMemo(() => {
+    if (!course?.id || !nextSlideNum) return '';
+    return api.getCourseSlideAudioUrl(course.id, nextSlideNum, selectedLanguageCode, voiceGender);
+  }, [course?.id, nextSlideNum, selectedLanguageCode, voiceGender]);
+
+  // When active lesson, language, or voice gender changes, load audio and maintain play state
+  useEffect(() => {
+    const audio = audioRef.current;
+    setSlideImageLoadError(false);
+    setLightboxOpen(false);
+
+    if (!audio || !currentAudioUrl || !isInteractiveCourse) return;
+
+    window._skillbridgeCurrentAudio = audio;
+    const currentSrc = audio.src || '';
+    const slideNum = activeLesson?.sourceSlides?.[0] || activeLesson?.id || currentSlideNum || 1;
+    const isMatchingCurrentRequest =
+      currentSrc.includes(`/slides/${slideNum}/audio`) &&
+      currentSrc.includes(`lang=${selectedLanguageCode}`) &&
+      currentSrc.includes(`gender=${voiceGender}`);
+
+    if (!isMatchingCurrentRequest) {
+      try { audio.pause(); } catch (e) {}
+      setIsAriaSpeaking(false);
+      isAriaSpeakingRef.current = false;
+      audio.src = currentAudioUrl;
+      audio.load();
+
+      if (playing) {
+        isAudioPlayingIntentRef.current = true;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsAriaSpeaking(true);
+              isAriaSpeakingRef.current = true;
+              setPipelineState('PLAYING');
+            })
+            .catch((err) => {
+              isAudioPlayingIntentRef.current = false;
+              console.debug('[CoursePlayer] Neural audio waiting for canplay:', err);
+              const resumeOnCanPlay = () => {
+                audio.removeEventListener('canplay', resumeOnCanPlay);
+                if (playingRef.current) {
+                  audio.play()
+                    .then(() => {
+                      setIsAriaSpeaking(true);
+                      isAriaSpeakingRef.current = true;
+                      setPipelineState('PLAYING');
+                    })
+                    .catch(() => {});
+                }
+              };
+              audio.addEventListener('canplay', resumeOnCanPlay, { once: true });
+            });
+        }
+      }
+    }
+  }, [activeLesson?.id, selectedLanguageCode, voiceGender, currentAudioUrl, isInteractiveCourse]);
+
+  // Play/pause control effect for neural audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.src || !isInteractiveCourse) return;
+
+    if (playing) {
+      if (audio.paused && !isAudioPlayingIntentRef.current) {
+        isAudioPlayingIntentRef.current = true;
+        audio.play().catch((err) => {
+          isAudioPlayingIntentRef.current = false;
+          console.debug('Play interrupted:', err);
+        });
+      }
+    } else {
+      isAudioPlayingIntentRef.current = false;
+      if (!audio.paused) {
+        audio.pause();
+      }
+      setIsAriaSpeaking(false);
+      isAriaSpeakingRef.current = false;
+    }
+  }, [playing, isInteractiveCourse]);
+
   useEffect(() => {
     activeLessonRef.current = activeLesson
   }, [activeLesson])
@@ -2481,11 +2853,43 @@ const CoursePlayer = ({
 
   const activeLessonIndex = useMemo(() => {
     if (!course?.lessons || !activeLesson) return 0
-    const idx = course.lessons.findIndex(l => l.id === activeLesson.id)
+    const idx = course.lessons.findIndex(l => String(l.id) === String(activeLesson.id))
     return idx >= 0 ? idx : 0
   }, [course?.lessons, activeLesson])
 
   const isNavigatingAssessmentRef = useRef(false)
+  const preloadedQuizMapRef = useRef({})
+
+  // Background simultaneous pre-generation of chapter assessment questions while student watches lesson
+  useEffect(() => {
+    if (!course?.id || !activeLesson?.id) return
+    const currentIdx = course?.lessons?.findIndex(l => String(l.id) === String(activeLesson?.id)) ?? -1
+    const nextLesson = course?.lessons?.[currentIdx + 1]
+    const isFinalLesson = !nextLesson || (course?.lessons && currentIdx >= (course.lessons.length - 1))
+    const cacheKey = `${course.id}_${activeLesson.id}_${selectedLanguageCode}${isFinalLesson ? '_final' : ''}`
+    if (preloadedQuizMapRef.current[cacheKey]) return
+
+    const timer = setTimeout(() => {
+      console.log(`[SIMULTANEOUS QUIZ] Launching background quiz pre-generation for lesson "${activeLesson.title}" (${activeLesson.id}), isFinal=${isFinalLesson}...`)
+      const promise = api.getLessonQuiz(course.id, activeLesson.id, activeLesson.title, selectedLanguageCode, isFinalLesson)
+        .then(res => {
+          if (res?.quiz && Array.isArray(res.quiz) && res.quiz.length > 0) {
+            console.log(`[SIMULTANEOUS QUIZ] Lesson quiz ready in background cache for "${activeLesson.title}" (${res.quiz.length} questions).`)
+            preloadedQuizMapRef.current[cacheKey] = res.quiz
+            return res.quiz
+          }
+          return null
+        })
+        .catch(err => {
+          console.warn(`[SIMULTANEOUS QUIZ] Background quiz pre-fetch notice:`, err.message)
+          return null
+        })
+
+      preloadedQuizMapRef.current[`promise_${cacheKey}`] = promise
+    }, 1200)
+
+    return () => clearTimeout(timer)
+  }, [course?.id, activeLesson?.id, selectedLanguageCode, course?.lessons])
 
   const handleTakeChapterAssessment = async () => {
     if (!activeLesson || isNavigatingAssessmentRef.current) return
@@ -2495,21 +2899,45 @@ const CoursePlayer = ({
     if (voiceManagerRef.current) {
       voiceManagerRef.current.setLecturePlaying(false)
     }
-    setLoadingQuiz(true)
     markLessonCompleted(activeLesson.id)
 
-    const currentIdx = course.lessons.findIndex(l => l.id === activeLesson.id)
+    const currentIdx = course.lessons.findIndex(l => String(l.id) === String(activeLesson.id))
     const nextLesson = course.lessons[currentIdx + 1]
     const nextLessonId = nextLesson ? nextLesson.id : null
+    const isFinalLesson = !nextLesson || currentIdx >= (course.lessons.length - 1)
 
-    try {
-      const quizRes = await api.getLessonQuiz(course.id, activeLesson.id, activeLesson.title, selectedLanguageCode)
+    const cacheKey = `${course.id}_${activeLesson.id}_${selectedLanguageCode}${isFinalLesson ? '_final' : ''}`
+    const cachedQuiz = preloadedQuizMapRef.current[cacheKey]
+
+    // If already pre-generated in the background: 0ms wait time!
+    if (cachedQuiz && Array.isArray(cachedQuiz) && cachedQuiz.length > 0) {
+      console.log(`[SIMULTANEOUS QUIZ] Instant launch: Assessment was preloaded simultaneously in background! 0ms wait.`)
       setLoadingQuiz(false)
-      onAssessment?.(course, activeLesson, quizRes?.quiz || null, nextLessonId)
+      onAssessment?.(course, activeLesson, cachedQuiz, nextLessonId, isFinalLesson)
+      return
+    }
+
+    // If pre-generation is in-flight, await the existing promise
+    const inFlightPromise = preloadedQuizMapRef.current[`promise_${cacheKey}`]
+    setLoadingQuiz(true)
+    try {
+      let quiz = null
+      if (inFlightPromise) {
+        quiz = await Promise.race([
+          inFlightPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 12000))
+        ])
+      }
+      if (!quiz) {
+        const quizRes = await api.getLessonQuiz(course.id, activeLesson.id, activeLesson.title, selectedLanguageCode, isFinalLesson)
+        quiz = quizRes?.quiz || null
+      }
+      setLoadingQuiz(false)
+      onAssessment?.(course, activeLesson, quiz, nextLessonId, isFinalLesson)
     } catch (err) {
       console.warn('RAG quiz generation fallback:', err)
       setLoadingQuiz(false)
-      onAssessment?.(course, activeLesson, null, nextLessonId)
+      onAssessment?.(course, activeLesson, null, nextLessonId, isFinalLesson)
     }
   }
 
@@ -2576,12 +3004,14 @@ const CoursePlayer = ({
       })
       .catch(err => {
         if (!isMountedRef.current) return;
-        console.error('Chat tutor error:', err)
-        setChatMessages(prev => [...prev, { sender: 'aria', text: `⚠️ ${err.message || 'The AI tutor is temporarily unavailable. Please try again in a moment.'}` }])
-        setChatLoading(false)
-        setTimeout(() => {
-          resumeLectureFromExactPosition()
-        }, 1500)
+        console.warn('Chat tutor notice:', err);
+        const safeTextFallback = 'In this course, we focus on verified operational safety, standard procedures, and compliance guidelines. What specific step can I clarify for you?';
+        setChatMessages(prev => [...prev, { sender: 'aria', text: safeTextFallback }]);
+        setVoiceStatusText(`🤖 ${aiTutorName} is answering...`);
+        speakAriaAnswer(safeTextFallback, () => {
+          resumeLectureFromExactPosition();
+        });
+        setChatLoading(false);
       })
   }
 
@@ -2675,28 +3105,84 @@ const CoursePlayer = ({
     return groups
   }, [course.lessons, course.curriculum])
 
+  const currentModuleIdx = useMemo(() => {
+    if (course?.curriculum?.modules && Array.isArray(course.curriculum.modules)) {
+      const mIdx = course.curriculum.modules.findIndex(m => m.moduleId === activeLesson?.moduleId || m.slideNumbers?.includes(activeLesson?.id))
+      if (mIdx >= 0) return mIdx
+    }
+    const gIdx = moduleGroups.findIndex(g => g.lessons.some(l => l.lesson.id === activeLesson?.id))
+    return gIdx >= 0 ? gIdx : 0
+  }, [course, activeLesson, moduleGroups])
+
+  const totalModules = useMemo(() => {
+    if (course?.curriculum?.modules?.length) return course.curriculum.modules.length
+    if (moduleGroups.length > 0) return moduleGroups.length
+    return 1
+  }, [course, moduleGroups])
+
+  const activeModuleSlides = useMemo(() => {
+    if (course?.curriculum?.modules && course.curriculum.modules[currentModuleIdx]) {
+      const mod = course.curriculum.modules[currentModuleIdx]
+      const sNums = mod.slideNumbers || []
+      if (sNums.length > 0 && Array.isArray(course.curriculum.slides)) {
+        return course.curriculum.slides.filter(s => sNums.includes(s.slideNumber || s.slide_number))
+      }
+    }
+    const activeGroup = moduleGroups[currentModuleIdx]
+    if (activeGroup && activeGroup.lessons) {
+      return activeGroup.lessons.map(({ lesson, index }) => ({
+        slideNumber: lesson.sourceSlides?.[0] || lesson.id || (index + 1),
+        title: lesson.title,
+        image: lesson.image || (course?.id ? api.getCourseSlideImageUrl(course.id, lesson.sourceSlides?.[0] || lesson.id || (index + 1)) : null)
+      }))
+    }
+    return []
+  }, [course, currentModuleIdx, moduleGroups])
+
+  const handleSelectSlideNumber = (slideNum) => {
+    const targetLesson = course?.lessons?.find(l => {
+      if (Array.isArray(l.sourceSlides) && l.sourceSlides.some(s => Number(s) === Number(slideNum))) return true;
+      return String(l.id) === String(slideNum) || Number(l.id) === Number(slideNum);
+    });
+    if (targetLesson) {
+      haltAllSkillBridgeAudio()
+      setActiveLessonId(targetLesson.id)
+      setActiveLesson(targetLesson)
+      setCurrentSentenceIdx(0)
+      setElapsedSeconds(0)
+      setPlaying(true)
+    }
+  }
+
+  const effectiveRenderMode = slideImageLoadError ? 'card' : renderMode
+
   return (
     <div className="min-h-screen lg:h-screen lg:max-h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f7fc] text-[#0f172a] select-none flex flex-col font-sans">
-      {/* Sub-header Navigation with Active Language Selector */}
-      <div className="shrink-0 w-full px-3 sm:px-4 pt-1.5 sm:pt-2 pb-1 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={handleExit}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 transition border-0 bg-transparent p-0 cursor-pointer"
-        >
-          <span className="text-base">←</span> Back
-        </button>
+      {/* Sub Header Bar: Navigation, Course Title & Language Dropdown */}
+      <header className="shrink-0 w-full px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between border-b border-slate-200/80 bg-white shadow-2xs">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleExit}
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-200 text-xs sm:text-[13px] font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+          >
+            ← Back to Courses
+          </button>
+          <div className="h-4 w-px bg-slate-200" />
+          <h2 className="text-xs sm:text-sm font-extrabold text-[#0f1b2d] truncate max-w-[200px] sm:max-w-md">
+            {cleanUnsupportedWords(course.title)}
+          </h2>
+        </div>
 
-        {/* Multilingual Teaching Language Switcher */}
+        {/* Teaching Language Dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
-            <span>🌐</span>
-            <span className="hidden sm:inline">Teaching Language:</span>
+          <label className="text-[11px] sm:text-xs font-semibold text-slate-500 hidden sm:inline">
+            Language:
           </label>
           <select
             value={selectedLanguageCode}
             onChange={(e) => handleLanguageChange(e.target.value)}
-            className="bg-white border border-slate-200/90 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 shadow-2xs hover:border-[#ff8c21] focus:outline-none focus:border-[#ff8c21] cursor-pointer transition"
+            className="px-2 sm:px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
           >
             {LANGUAGES.map((lang) => (
               <option key={lang.value} value={lang.value}>
@@ -2705,7 +3191,7 @@ const CoursePlayer = ({
             ))}
           </select>
         </div>
-      </div>
+      </header>
 
       {/* Main 3-Column Grid Layout - Dynamically Proportioned for Scaled Screens */}
       <main className={`w-full px-3 sm:px-4 pb-2.5 sm:pb-3 grid grid-cols-1 gap-2.5 sm:gap-3 flex-1 min-h-0 overflow-visible lg:overflow-hidden ${chatCollapsed
@@ -2774,8 +3260,6 @@ const CoursePlayer = ({
                                 setCurrentSentenceIdx(0)
                                 setElapsedSeconds(0)
                                 setPlaying(true)
-                                setChatCollapsed(true)
-                                requestPlayerFullscreen()
                               }
                             }}
                             className={`w-full flex items-center gap-2 p-2.5 rounded-xl border text-left transition cursor-pointer ${isActive
@@ -2806,8 +3290,10 @@ const CoursePlayer = ({
                               <p className={`text-[11px] leading-snug truncate ${isActive ? 'font-bold text-slate-900' : 'font-medium text-slate-800'}`}>
                                 {index + 1}. {cleanUnsupportedWords(lesson.title)}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-normal mt-0.5">
-                                {getRealLessonDurationStr(lesson, lesson.id === activeLesson?.id ? explanation : null, index)}
+                              <p className={`text-[10px] font-normal mt-0.5 ${isActive ? 'text-indigo-600 font-semibold' : 'text-slate-400'}`}>
+                                {isActive && playing && audioDuration > 0
+                                  ? `▶ ${formatPlayerTime(audioCurrentTime)} / ${formatPlayerTime(audioDuration)}`
+                                  : getRealLessonDurationStr(lesson, isActive ? explanation : null, index)}
                               </p>
                             </div>
                           </button>
@@ -2891,125 +3377,60 @@ const CoursePlayer = ({
               .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
 
-            <div className="p-3 sm:p-4 lg:p-5 flex flex-col flex-1 min-h-0 justify-between">
-              {/* Split Content: Presentation Slide (Left) & Tutor Avatar (Right) */}
-              <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-center my-0.5 sm:my-1">
+            {/* Split Content: Presentation Slide Canvas (Left) & Lip-Sync Tutor Avatar (Right) */}
+            <div className="p-3 sm:p-4 lg:p-5 flex flex-col flex-1 min-h-0 justify-between overflow-hidden">
+              <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch overflow-hidden">
                 {/* Left Universal Document Viewer Canvas Container */}
-                <div className="md:col-span-7 lg:col-span-8 bg-[#0b1329] rounded-2xl border-2 border-slate-700/80 p-2.5 sm:p-3 h-full flex flex-col justify-between overflow-hidden shadow-2xl relative min-h-[180px]">
-                  {/* Main Display Canvas: Slide Screen Only */}
+                <div className="md:col-span-7 lg:col-span-7 bg-[#0b1329] rounded-2xl border-2 border-slate-700/80 p-2 sm:p-2.5 h-full flex flex-col justify-between overflow-hidden shadow-2xl relative min-h-[360px] sm:min-h-[440px]">
                   <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden relative">
-                    {/* Non-intrusive floating explanation badge while assistant pre-warms explanation */}
+                    {/* Floating explanation pre-warm badge */}
                     {loadingExplanation && (
                       <div className="absolute top-2 left-2 right-2 z-30 bg-slate-900/90 border border-[#ff8c21]/40 backdrop-blur-md rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-[#ff8c21] shadow-lg animate-fadeIn">
                         <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#ff8c21]/20 border-t-[#ff8c21]" />
-                        <span className="font-semibold text-[11px]">{aiTutorName} & Qwen are preparing explanation for this slide...</span>
+                        <span className="font-semibold text-[11px]">{aiTutorName} is preparing explanation for this slide...</span>
                       </div>
                     )}
 
-                    {/* Faithful PowerPoint Presentation Slide Screen */}
-                    {(currentDocPage?.image && !slideImageLoadError) || (activeVisual && (activeVisual.dataUrl || activeVisual.url) && !slideImageLoadError) ? (
-                      <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
-                        <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950/80 shadow-lg relative group flex flex-col">
-                          <div className={`relative flex-1 min-h-0 flex bg-black/60 overflow-auto no-scrollbar ${fitToWidth ? 'items-start justify-center p-1 sm:p-2' : 'items-center justify-center p-2'}`}>
-                            <img
-                              src={currentDocPage?.image || activeVisual.dataUrl || activeVisual.url}
-                              alt={currentDocPage?.title || activeVisual?.descr || 'Presentation Slide'}
-                              onError={() => setSlideImageLoadError(true)}
-                              style={{
-                                transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined,
-                                transformOrigin: 'center top',
-                                transition: 'transform 0.15s ease-out'
-                              }}
-                              className={`rounded-lg shadow-2xl cursor-zoom-in transition-all duration-200 ${
-                                fitToWidth
-                                  ? 'w-full h-auto object-contain max-h-none'
-                                  : 'max-h-full max-w-full w-auto h-auto object-contain'
-                              }`}
-                              onClick={() => setEnlargedVisual({ dataUrl: currentDocPage?.image || activeVisual?.dataUrl || activeVisual?.url, name: currentDocPage?.title || activeVisual?.name })}
-                              title="Click to view full-resolution presentation slide"
-                            />
-                          </div>
-                          <div className="shrink-0 px-3 py-1.5 bg-slate-900/95 border-t border-slate-800 flex items-center justify-between gap-2 text-[10px]">
-                            <span className="font-bold text-[#ff8c21] flex items-center gap-1.5 truncate">
-                              <span>Slide {currentPageNum} of {totalPages}</span>
-                              <span className="text-slate-300 font-medium truncate">• {cleanUnsupportedWords(currentDocPage?.title || activeLesson?.title)}</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Interactive PowerPoint Presentation Slide Canvas (when image is rendering or text-structured) */
-                      <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
-                        <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-slate-700/80 bg-linear-to-br from-[#0c142c] via-[#101b3d] to-[#070d1e] shadow-xl relative flex flex-col p-4 sm:p-6 text-white justify-between">
-                          {/* Slide Stage Header */}
-                          <div className="shrink-0 pb-3 border-b border-slate-700/60 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="h-6 w-6 rounded-lg bg-[#ff8c21]/20 text-[#ff8c21] border border-[#ff8c21]/40 flex items-center justify-center text-xs font-bold">
-                                📊
-                              </span>
-                              <div>
-                                <span className="text-[10px] font-bold text-[#ff8c21] uppercase tracking-wider block">
-                                  {fileTypeBadge.includes('SLIDE') ? 'PowerPoint Presentation' : 'Training Document'} • {currentPageNum} / {totalPages}
-                                </span>
-                                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-white leading-tight">
-                                  {cleanUnsupportedWords(currentDocPage?.title || activeLesson?.title || `Slide ${currentPageNum}`)}
-                                </h3>
-                              </div>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-semibold px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
-                              {cleanUnsupportedWords(course.title)}
-                            </span>
-                          </div>
-
-                          {/* Slide Body Content */}
-                          <div className="flex-1 min-h-0 my-3 overflow-y-auto pr-1 space-y-3 no-scrollbar text-left">
-                            {/* Headings */}
-                            {currentDocPage?.headings && currentDocPage.headings.length > 0 && (
-                              <div className="space-y-1">
-                                {currentDocPage.headings.map((h, hIdx) => (
-                                  <h4 key={hIdx} className="text-xs sm:text-sm font-semibold text-orange-200">
-                                    {h}
-                                  </h4>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Bullet points */}
-                            {currentDocPage?.bulletPoints && currentDocPage.bulletPoints.length > 0 ? (
-                              <ul className="space-y-2 text-xs sm:text-[13px] text-slate-200">
-                                {currentDocPage.bulletPoints.map((bp, bpIdx) => (
-                                  <li key={bpIdx} className="flex items-start gap-2.5 leading-relaxed bg-slate-800/40 p-2 rounded-lg border border-slate-700/40">
-                                    <span className="text-[#ff8c21] font-bold text-sm leading-none mt-0.5">▸</span>
-                                    <span className="flex-1">{bp.replace(/^[-*•]\s*/, '')}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : currentDocPage?.text ? (
-                              <div className="text-xs sm:text-[13px] text-slate-300 leading-relaxed whitespace-pre-line bg-slate-800/30 p-3 rounded-xl border border-slate-700/40">
-                                {currentDocPage.text.slice(0, 800)}
-                              </div>
-                            ) : (
-                              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                                <span className="text-3xl mb-2">📊</span>
-                                <p className="text-xs font-semibold text-slate-300">
-                                  PowerPoint Slide {currentPageNum}: {currentDocPage?.title}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Slide Stage Footer */}
-                          <div className="shrink-0 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                            <span className="flex items-center gap-1.5 font-medium">
-                              <span className="text-[#ff8c21]">●</span> SkillBridge Interactive Slide Player
-                            </span>
-                            <span className="font-mono text-slate-400 font-bold">
-                              Slide {currentPageNum} of {totalPages}
-                            </span>
+                    {/* Mode A: Authentic Original Presentation Slide Screen */}
+                    <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+                      <div
+                        onClick={() => setEnlargedVisual({
+                          dataUrl: currentDocPage?.image || (course?.id ? api.getCourseSlideImageUrl(course.id, currentSlideNum) : ''),
+                          name: currentDocPage?.title || activeLesson?.title,
+                          sourceSlide: currentSlideNum
+                        })}
+                        className="flex-1 min-h-0 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950/80 shadow-lg relative group flex flex-col cursor-zoom-in"
+                        title="Click to open full-resolution Lightbox zoom"
+                      >
+                        <div className={`relative flex-1 min-h-0 w-full flex items-center justify-center bg-[#050b1a] overflow-hidden select-none ${fitToWidth ? 'p-0 sm:p-1' : 'p-2 sm:p-3'}`}>
+                          <img
+                            key={`slide-img-${course?.id}-${currentSlideNum}`}
+                            src={currentDocPage?.image || (course?.id ? api.getCourseSlideImageUrl(course.id, currentSlideNum) : '')}
+                            alt={currentDocPage?.title || `Slide ${currentSlideNum}`}
+                            onError={(e) => {
+                              if (!e.currentTarget.dataset.retried) {
+                                e.currentTarget.dataset.retried = '1';
+                                e.currentTarget.src = `${currentDocPage?.image || api.getCourseSlideImageUrl(course?.id, currentSlideNum)}?t=${Date.now()}`;
+                              }
+                            }}
+                            style={{
+                              transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined,
+                              transformOrigin: 'center center',
+                              transition: 'transform 0.15s ease-out'
+                            }}
+                            className={`rounded-lg shadow-2xl transition-all duration-200 select-none ${
+                              fitToWidth
+                                ? 'w-full h-auto object-contain max-h-none'
+                                : 'max-h-full max-w-full w-auto h-auto object-contain'
+                            }`}
+                          />
+                          {/* Hover Zoom Badge */}
+                          <div className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded-md text-[10px] text-slate-300 flex items-center gap-1 shadow-md opacity-80 group-hover:opacity-100 transition">
+                            <span>🔍 Click to Zoom</span>
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* Safety Warnings Banner (when Qwen identifies safety caveats) */}
                     {tutorGuidance.safetyWarnings && tutorGuidance.safetyWarnings.length > 0 && (
@@ -3030,59 +3451,29 @@ const CoursePlayer = ({
                   </div>
                 </div>
 
-                {/* Right ARIA Tutor Circle Avatar with Robot AI Emoji */}
-                <div className="md:col-span-5 lg:col-span-4 h-full flex flex-col items-center justify-center text-center border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 px-2 sm:px-4">
-                  {/* Circular Avatar Frame with Robot Emoji (Clickable to call) */}
-                  <button
-                    type="button"
+                {/* Right Column: Complete Audio Lip-Sync AI Tutor (Persona & Voice locked to Company Admin settings) */}
+                <div className="md:col-span-5 lg:col-span-5 h-full min-h-[360px] sm:min-h-[440px] flex flex-col items-stretch text-center relative overflow-hidden">
+                  <LipSyncAvatar
+                    gender={voiceGender}
+                    voiceGender={voiceGender}
+                    onGenderChange={null}
+                    isSpeaking={isAriaSpeaking}
+                    tutorVoiceState={tutorVoiceState}
                     onClick={handleAvatarCall}
-                    title={`Click to call ${aiTutorName} (or say "${aiWakeWord}")`}
-                    className={`relative flex items-center justify-center h-28 w-28 sm:h-36 sm:w-36 md:h-40 md:w-40 lg:h-44 lg:w-44 rounded-full bg-[#182337] border-2 sm:border-[2.5px] cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#ff8c21]/50 ${
-                      isAriaSpeaking || playing || tutorVoiceState === TutorState.ARIA_SPEAKING || tutorVoiceState === TutorState.ARIA_GREETING
-                        ? 'border-[#ff8c21]/90 shadow-[0_0_30px_rgba(245,130,32,0.4)] avatar-active ring-4 ring-[#ff8c21]/20'
-                        : tutorVoiceState === TutorState.ACTIVE_LISTENING || tutorVoiceState === TutorState.FOLLOW_UP_LISTENING
-                          ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.35)] ring-4 ring-emerald-500/20 animate-pulse'
-                          : 'border-[#293c5d] hover:border-[#ff8c21]/70 shadow-2xl hover:shadow-[0_0_25px_rgba(245,130,32,0.25)]'
-                    }`}
-                  >
-                    <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl select-none filter drop-shadow-md group-hover:scale-110 transition-transform">
-                      🤖
-                    </span>
-
-                    {/* Calling / Listening ripple ring when awake */}
-                    {(tutorVoiceState === TutorState.ACTIVE_LISTENING || tutorVoiceState === TutorState.FOLLOW_UP_LISTENING) && (
-                      <span className="absolute -inset-2 rounded-full border-2 border-emerald-400 animate-ping opacity-60 pointer-events-none" />
-                    )}
-
-                    {/* Quick Call icon overlay badge */}
-                    <span className="absolute bottom-1 right-1 h-7 w-7 rounded-full bg-[#ff8c21] text-white flex items-center justify-center text-xs shadow-md border-2 border-[#182337] group-hover:scale-110 transition-transform" title="Call AI Avatar">
-                      🎙️
-                    </span>
-                  </button>
-
-                  {/* ARIA AI TUTOR Pill Badge & Call Hint */}
-                  <div className="mt-3 sm:mt-4 flex flex-col items-center gap-1.5 select-none">
-                    <button
-                      type="button"
-                      onClick={handleAvatarCall}
-                      className="px-4 py-1 rounded-full bg-[#131d2e] border border-[#2a3952] hover:border-[#ff8c21]/60 shadow-sm cursor-pointer transition flex items-center gap-1.5"
-                    >
-                      <span className="h-2 w-2 rounded-full bg-[#ff8c21] animate-pulse" />
-                      <span className="text-xs sm:text-[13px] font-extrabold text-[#ff8c21] tracking-wider uppercase">
-                        {aiTutorName} AI TUTOR
-                      </span>
-                    </button>
-                    <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
-                      Click avatar or say <strong className="text-slate-200">"{aiWakeWord}"</strong>
-                    </span>
-                  </div>
+                    tutorName={aiTutorName}
+                    wakeWord={aiWakeWord}
+                    audioElement={audioRef.current}
+                  />
                 </div>
               </div>
 
-              {/* Subtitle Caption Overlay */}
+              {/* Subtitle Caption Overlay (CC) */}
               {showCC && (
-                <div className="shrink-0 bg-[#040814]/90 backdrop-blur-md rounded-lg py-1.5 sm:py-2 px-3 sm:px-4 border border-white/10 mt-1.5 sm:mt-2 text-center">
-                  <p className="text-xs sm:text-sm text-white font-medium leading-relaxed italic truncate">
+                <div className="shrink-0 bg-[#040814]/90 backdrop-blur-md rounded-lg py-1.5 px-3 border border-white/10 mt-2 text-center flex items-center justify-center gap-2 min-h-[34px]">
+                  <span className="text-[10px] font-extrabold text-[#ff8c21] bg-[#ff8c21]/20 px-1.5 py-0.5 rounded tracking-wide">
+                    CC
+                  </span>
+                  <p className="text-xs sm:text-[13px] text-white font-medium leading-relaxed italic truncate">
                     {loadingExplanation
                       ? `${aiTutorName}: "Preparing lesson explanation..."`
                       : (playing ? `${aiTutorName}: "${cleanForBoard(sentences[currentSentenceIdx]) || `Focusing on ${cleanForBoard(activeLesson?.title || 'the current topic')}`}"` : 'Lecture paused.')}
@@ -3091,104 +3482,198 @@ const CoursePlayer = ({
               )}
             </div>
 
-            {/* SLEEK DARK BLUE VIDEO PLAYER CONTROL BAR (ATTACHED IMAGE STYLE) */}
-            <div className="shrink-0 bg-[#081a38] text-white px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 border-t border-white/10 select-none">
-              {/* Left Controls: Play/Pause, Volume/Mute, Timestamp */}
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleTogglePlay}
-                  className="text-white hover:text-[#ff8c21] transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center"
-                  title={playing ? "Pause" : "Play"}
-                >
-                  {playing ? (
-                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMuted(v => !v)
-                    if (!muted) window.speechSynthesis.cancel()
-                  }}
-                  className="text-white hover:text-[#ff8c21] transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center ml-1"
-                  title={muted ? "Unmute" : "Mute"}
-                >
-                  {muted ? (
-                    <svg className="h-5 w-5 fill-current text-slate-400" viewBox="0 0 24 24">
-                      <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                    </svg>
-                  )}
-                </button>
-
-                <span className="text-xs font-mono font-medium text-slate-200 tracking-wider select-none ml-1">
-                  {formattedTimeString}
-                </span>
-              </div>
-
-              {/* Center Timeline Scrubber */}
-              <div
-                className="flex-1 min-w-[100px] max-w-md mx-2 h-2 bg-slate-700/80 rounded-full cursor-pointer relative overflow-hidden group flex items-center"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  const clickX = e.clientX - rect.left
-                  const pct = Math.max(0, Math.min(1, clickX / rect.width))
-                  const newSeconds = Math.round(pct * totalSeconds)
-                  const newIdx = Math.min(sentences.length - 1, Math.max(0, Math.floor(pct * sentences.length)))
-                  setElapsedSeconds(newSeconds)
-                  setCurrentSentenceIdx(newIdx)
-                  if (playing) {
-                    window.speechSynthesis.cancel()
+            {/* SLEEK CLEAN VIDEO PLAYER CONTROL BAR (EXACTLY MATCHING IMAGE 3) */}
+            <div className="shrink-0 bg-[#081a38] text-white px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-3 border-t border-white/10 select-none">
+              {/* 1. Play / Pause Button (Clicking Play opens Fullscreen) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!playing) {
+                    requestPlayerFullscreen();
                   }
+                  handleTogglePlay();
+                }}
+                className="text-white hover:text-[#ff8c21] transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center shrink-0"
+                title={playing ? "Pause" : "Play (Opens Fullscreen)"}
+              >
+                {playing ? (
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </button>
+
+              {/* 2. Speaker / Mute Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAudioMuted(v => !v);
+                  setMuted(v => !v);
+                }}
+                className="text-slate-200 hover:text-white transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center shrink-0"
+                title={isAudioMuted || muted ? "Unmute" : "Mute"}
+              >
+                {isAudioMuted || muted ? (
+                  <svg className="h-5 w-5 fill-current text-slate-400" viewBox="0 0 24 24">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                  </svg>
+                )}
+              </button>
+
+              {/* 3. Timestamp: 00:29 / 01:00 */}
+              <span className="text-xs font-mono font-medium text-slate-200 tracking-wider select-none shrink-0">
+                {formatPlayerTime(audioCurrentTime || elapsedSeconds)} / {formatPlayerTime(audioDuration || totalSeconds)}
+              </span>
+
+              {/* 4. Full-Width Timeline Scrubber Bar with White Fill & Thumb Circle (Image 3) */}
+              <div
+                className="flex-1 min-w-[100px] h-1.5 bg-slate-700/80 rounded-full cursor-pointer relative flex items-center group"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const pct = Math.max(0, Math.min(1, clickX / rect.width));
+                  if (audioRef.current && audioDuration > 0) {
+                    audioRef.current.currentTime = pct * audioDuration;
+                  }
+                  const newSeconds = Math.round(pct * (audioDuration || totalSeconds));
+                  const newIdx = Math.min(sentences.length - 1, Math.max(0, Math.floor(pct * sentences.length)));
+                  setElapsedSeconds(newSeconds);
+                  setCurrentSentenceIdx(newIdx);
                 }}
               >
                 <div
-                  className="h-full bg-white rounded-full transition-all duration-150 group-hover:bg-[#ff8c21]"
-                  style={{ width: `${Math.min(100, Math.max(0, (elapsedSeconds / Math.max(1, totalSeconds)) * 100))}%` }}
-                />
+                  className="h-full bg-white rounded-full relative"
+                  style={{ width: `${Math.min(100, Math.max(0, ((audioCurrentTime || elapsedSeconds) / Math.max(1, audioDuration || totalSeconds)) * 100))}%` }}
+                >
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow-md pointer-events-none" />
+                </div>
               </div>
 
-              {/* Right Controls: CC, Fullscreen, Assessment Button */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowCC(v => !v)}
-                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border transition cursor-pointer ${showCC ? 'bg-white text-[#081a38] border-white' : 'bg-transparent text-slate-400 border-slate-600 hover:text-white'
-                    }`}
-                  title="Toggle Captions"
-                >
-                  CC
-                </button>
+              {/* 5. Closed Captions (CC) Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowCC(v => !v)}
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border transition cursor-pointer shrink-0 ${
+                  showCC ? 'bg-white text-[#081a38] border-white font-bold' : 'bg-transparent text-slate-400 border-slate-600 hover:text-white'
+                }`}
+                title="Toggle Closed Captions (CC)"
+              >
+                CC
+              </button>
 
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  className="text-slate-200 hover:text-white transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center"
-                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                >
-                  {isFullscreen ? (
-                    <svg className="h-4 w-4 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v5H4m11-5v5h5M9 20v-5H4m11 5v-5h5" />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+              {/* 6. Fullscreen Button */}
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className="text-slate-200 hover:text-white transition cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center shrink-0"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                {isFullscreen ? (
+                  <svg className="h-4.5 w-4.5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v5H4m11-5v5h5M9 20v-5H4m11 5v-5h5" />
+                  </svg>
+                ) : (
+                  <svg className="h-4.5 w-4.5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                )}
+              </button>
             </div>
+
+            {/* Audio Elements */}
+            <audio
+              ref={audioRef}
+              crossOrigin="anonymous"
+              src={currentAudioUrl}
+              onPlay={() => {
+                setIsAriaSpeaking(true);
+                isAriaSpeakingRef.current = true;
+              }}
+              onPlaying={() => {
+                setIsAriaSpeaking(true);
+                isAriaSpeakingRef.current = true;
+              }}
+              onWaiting={() => {
+                setIsAriaSpeaking(false);
+                isAriaSpeakingRef.current = false;
+              }}
+              onPause={() => {
+                setIsAriaSpeaking(false);
+                isAriaSpeakingRef.current = false;
+              }}
+              onError={(e) => {
+                setIsAriaSpeaking(false);
+                isAriaSpeakingRef.current = false;
+                console.warn('[CoursePlayer] Audio playback element notice:', e);
+              }}
+              onTimeUpdate={(e) => {
+                const cur = e.currentTarget.currentTime;
+                const dur = e.currentTarget.duration;
+                setAudioCurrentTime(cur);
+                setElapsedSeconds(Math.floor(cur));
+                if (dur && !isNaN(dur) && dur > 0) {
+                  setAudioDuration(dur);
+                  if (sentences.length > 0) {
+                    const sIdx = Math.min(sentences.length - 1, Math.floor((cur / dur) * sentences.length));
+                    if (sIdx !== currentSentenceIdxRef.current) {
+                      currentSentenceIdxRef.current = sIdx;
+                      setCurrentSentenceIdx(sIdx);
+                    }
+                  }
+                }
+              }}
+              onLoadedMetadata={(e) => {
+                const dur = e.currentTarget.duration;
+                if (dur && !isNaN(dur)) {
+                  setAudioDuration(dur);
+                }
+              }}
+              onEnded={() => {
+                setIsAriaSpeaking(false);
+                isAriaSpeakingRef.current = false;
+                if (activeLesson?.id) {
+                  markLessonCompleted(activeLesson.id);
+                }
+                const currentIdx = course?.lessons?.findIndex(l => String(l.id) === String(activeLesson?.id)) ?? -1;
+                const nextLesson = course?.lessons?.[currentIdx + 1];
+                const currentModule = activeLesson?.moduleTitle || activeLesson?.chapterTitle || '';
+                const nextModule = nextLesson?.moduleTitle || nextLesson?.chapterTitle || '';
+                const isLastLessonOfModule = !nextLesson || (currentModule !== nextModule);
+
+                if (isLastLessonOfModule) {
+                  setVoiceStatusText('🎉 Chapter complete! Preparing your assessment, please wait...');
+                  setLoadingQuiz(true);
+                  setTimeout(() => {
+                    if (handleTakeChapterAssessmentRef.current) {
+                      handleTakeChapterAssessmentRef.current();
+                    }
+                  }, 600);
+                } else if (nextLesson) {
+                  setVoiceStatusText(`✅ Lesson completed! Advancing to: ${nextLesson.title}...`);
+                  setTimeout(() => {
+                    setActiveLessonId(nextLesson.id);
+                    setActiveLesson(nextLesson);
+                    setCurrentSentenceIdx(0);
+                    setElapsedSeconds(0);
+                    setPlaying(true);
+                  }, 800);
+                } else {
+                  setPlaying(false);
+                }
+              }}
+              onError={(e) => {
+                console.warn('[CoursePlayer] Neural audio error, falling back to Web Speech:', e);
+              }}
+            />
+            {nextAudioUrl && <audio ref={preloadAudioRef} src={nextAudioUrl} preload="auto" />}
           </div>
         </section>
 

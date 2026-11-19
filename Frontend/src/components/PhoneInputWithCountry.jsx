@@ -74,12 +74,17 @@ export default function PhoneInputWithCountry({
   };
 
   const handleInputChange = (e) => {
-    const inputVal = e.target.value;
+    const rawVal = e.target.value;
+    // Strictly allow numbers only (plus optional leading '+' for country code, spaces, and dashes)
+    let cleaned = rawVal.replace(/[^\d+ -]/g, '');
+    if (cleaned.includes('+')) {
+      cleaned = (cleaned.startsWith('+') ? '+' : '') + cleaned.replace(/\+/g, '');
+    }
     if (onChange) {
-      onChange(inputVal);
+      onChange(cleaned);
     }
     // If the user typed a known dial code, auto-sync country
-    const detected = detectCountryFromPhone(inputVal);
+    const detected = detectCountryFromPhone(cleaned);
     if (detected && detected.name !== country && onCountryChange) {
       onCountryChange(detected.name);
     }
@@ -132,9 +137,21 @@ export default function PhoneInputWithCountry({
           id={id}
           name={name}
           type="tel"
+          inputMode="tel"
+          pattern="[0-9+ -]*"
           required={required}
           disabled={disabled}
           value={value}
+          onKeyDown={(e) => {
+            if (
+              !/[0-9+ -]/.test(e.key) &&
+              !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key) &&
+              !e.ctrlKey &&
+              !e.metaKey
+            ) {
+              e.preventDefault();
+            }
+          }}
           onChange={handleInputChange}
           placeholder={computedPlaceholder}
           className="flex-1 min-w-0 px-3 py-2.5 bg-transparent text-xs outline-none placeholder-slate-400 font-mono tracking-tight"

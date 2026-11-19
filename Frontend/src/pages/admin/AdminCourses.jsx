@@ -21,6 +21,9 @@ const AdminCourses = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [stage, setStage] = useState('') // uploading | parsing | structuring | finalizing
   const [errorMsg, setErrorMsg] = useState('')
+  const [isInteractiveMode, setIsInteractiveMode] = useState(true)
+  const [generationProgress, setGenerationProgress] = useState(0)
+  const [generationMessage, setGenerationMessage] = useState('')
 
   // Edit modal state
   const [editingCourse, setEditingCourse] = useState(null)
@@ -92,6 +95,116 @@ const AdminCourses = () => {
     setIsGenerating(true)
     setErrorMsg('')
 
+    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase()
+    const isInteractiveCandidate = ['.pptx', '.ppt', '.pdf', '.docx', '.doc'].includes(ext)
+
+    console.log('[DIAGNOSTIC][Frontend] Generate Course button clicked:', {
+      title: title.trim(),
+      fileName: selectedFile?.name,
+      fileSize: selectedFile?.size,
+      isInteractiveMode,
+      isInteractiveCandidate
+    })
+
+    if (isInteractiveMode && isInteractiveCandidate) {
+      setStage('uploading')
+      setGenerationProgress(5)
+      setGenerationMessage('Uploading presentation document...')
+
+      let stopPolling = false
+      let pollTimer = null
+      try {
+        const uploadRes = await api.adminUploadInteractiveCourse(title.trim(), description.trim(), selectedFile)
+        const courseId = uploadRes.courseId
+        console.log('[DIAGNOSTIC][Frontend] upload-interactive succeeded, tracking courseId:', courseId)
+
+        await new Promise((resolve, reject) => {
+          let consecutiveErrors = 0
+          let idleCount = 0
+          const MAX_CONSECUTIVE_ERRORS = 10
+
+          const poll = async () => {
+            if (stopPolling) return
+            try {
+              const status = await api.getCourseGenerationStatus(courseId)
+              consecutiveErrors = 0 // Reset on successful poll
+              console.log('[DIAGNOSTIC][Frontend] Polling generation-status response:', { courseId, status })
+
+              if (status.stage) {
+                setStage(status.stage)
+              }
+              if (typeof status.progress === 'number') {
+                setGenerationProgress(status.progress)
+              }
+              if (status.message) {
+                setGenerationMessage(status.message)
+              }
+
+              const isCompleted = status.status === 'completed' || status.stage === 'completed' || status.progress >= 100
+              const isFailed = status.status === 'failed' || status.stage === 'error' || status.stage === 'failed'
+              const isIdle = status.status === 'idle' || status.stage === 'idle'
+
+              if (isCompleted) {
+                console.log('[DIAGNOSTIC][Frontend] Generation completed for courseId:', courseId)
+                stopPolling = true
+                resolve(status)
+                return
+              }
+
+              if (isFailed) {
+                console.error('[DIAGNOSTIC][Frontend] Generation reported failure for courseId:', courseId, status)
+                stopPolling = true
+                reject(new Error(status.error || status.message || 'Interactive course generation failed.'))
+                return
+              }
+
+              if (isIdle) {
+                idleCount++
+                console.warn(`[DIAGNOSTIC][Frontend] Course ${courseId} reported idle (${idleCount}/3)`)
+                if (idleCount >= 3) {
+                  stopPolling = true
+                  reject(new Error('No active generation task found for this course. Please try uploading again.'))
+                  return
+                }
+              } else {
+                idleCount = 0
+              }
+            } catch (pollErr) {
+              consecutiveErrors++
+              console.warn(`[DIAGNOSTIC][Frontend] Transient polling warning (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, pollErr.message || pollErr)
+              if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                stopPolling = true
+                reject(new Error('Connection lost while tracking course generation. The generation may still be running in the background. Please refresh the courses list shortly.'))
+                return
+              }
+            }
+
+            if (!stopPolling) {
+              pollTimer = setTimeout(poll, 1500)
+            }
+          }
+
+          poll()
+        })
+
+        setIsGenerating(false)
+        setShowModal(false)
+        resetCreateForm()
+        toast.success('AI Interactive Presentation Course generated successfully!')
+        fetchCourses()
+      } catch (err) {
+        stopPolling = true
+        if (pollTimer) clearTimeout(pollTimer)
+        console.error('Interactive course publish error:', err)
+        const msg = err.message || 'An error occurred during interactive course generation.'
+        setErrorMsg(msg)
+        toast.error(msg)
+        setIsGenerating(false)
+      }
+      return
+    }
+
+    // Standard fallback upload
     setStage('uploading')
     const t1 = setTimeout(() => setStage('parsing'), 1800)
     const t2 = setTimeout(() => setStage('structuring'), 4200)
@@ -472,6 +585,28 @@ const AdminCourses = () => {
                   </label>
                 </div>
 
+                {/* AI Interactive Presentation Mode Switch */}
+                <div className="rounded-xl border border-orange/30 bg-orange/5 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✨</span>
+                      <span className="text-xs font-bold text-fg">AI Interactive Presentation Platform</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isInteractiveMode}
+                        onChange={(e) => setIsInteractiveMode(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange"></div>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-muted leading-relaxed">
+                    Renders 1080p Lanczos slides, whole-document understanding (Qwen 2.5:14B), selective vision (Qwen 2.5VL:7B), 2–5 module planning with 1:1 partition, bullet healing, 6-language translation (EN, ZH, MS, TA, TE, BN), and Microsoft Edge Neural TTS narration.
+                  </p>
+                </div>
+
                 {errorMsg && (
                   <div className="rounded-lg border border-danger/20 bg-danger/5 p-3 text-xs font-semibold text-danger flex items-center gap-2">
                     <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -499,20 +634,66 @@ const AdminCourses = () => {
               </form>
             ) : (
               /* Loader Screen */
-              <div className="py-8 text-center">
-                <div className="relative mx-auto h-12 w-12 mb-4 flex items-center justify-center">
+              <div className="py-6 text-center space-y-4">
+                <div className="relative mx-auto h-14 w-14 flex items-center justify-center">
                   <div className="absolute inset-0 animate-spin rounded-full border-4 border-orange/20 border-t-orange" />
+                  <span className="text-sm font-bold text-orange">{generationProgress || 10}%</span>
                 </div>
-                <h3 className="font-display font-bold text-fg text-sm">
-                  {stage === 'uploading' && 'Uploading Document...'}
-                  {stage === 'parsing' && 'Parsing Text Content...'}
-                  {stage === 'structuring' && 'Chunking & Structuring Curriculum...'}
-                  {stage === 'finalizing' && 'Synthesizing Study Notes...'}
-                  {!stage && 'Creating Course Module...'}
-                </h3>
-                <p className="mt-2 text-xs text-muted max-w-[260px] mx-auto leading-relaxed">
-                  Structuring course curriculum, lessons, and assessment questions...
-                </p>
+
+                <div>
+                  <h3 className="font-display font-bold text-fg text-base">
+                    {generationMessage || (
+                      stage === 'rendering' ? 'Rendering 1080p Presentation Slides...' :
+                      stage === 'understanding' ? 'Whole-Document AI Understanding (Qwen 2.5:14B)...' :
+                      stage === 'vision' ? 'Selective Vision Processing (Qwen 2.5VL:7B)...' :
+                      stage === 'curriculum_planning' ? 'Planning 2–5 Modules (1:1 Slide Partition)...' :
+                      stage === 'narration' ? 'Generating Teacher Narration & Bullet Healing...' :
+                      stage === 'multilingual' ? 'Translating to 6 Languages (EN, ZH, MS, TA, TE, BN)...' :
+                      stage === 'neural_tts' ? 'Synthesizing Microsoft Edge Neural Voices...' :
+                      stage === 'finalizing' ? 'Finalizing Course Player Content...' :
+                      'Processing Interactive Presentation...'
+                    )}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted max-w-[340px] mx-auto leading-relaxed">
+                    AI is converting your presentation into a structured, multilingual interactive course.
+                  </p>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-ink rounded-full h-2 overflow-hidden border border-line">
+                  <div
+                    className="bg-orange h-full transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.max(8, generationProgress)}%` }}
+                  />
+                </div>
+
+                {/* 8-Stage Progress Steps */}
+                <div className="grid grid-cols-2 gap-2 text-left pt-2 border-t border-line text-[11px]">
+                  <div className={`p-2 rounded-lg border ${['rendering', 'understanding', 'vision', 'curriculum_planning', 'narration', 'multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    1. 1080p Slide Rendering
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['understanding', 'vision', 'curriculum_planning', 'narration', 'multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    2. Qwen 2.5 AI Understanding
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['vision', 'curriculum_planning', 'narration', 'multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    3. Qwen Vision Analysis
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['curriculum_planning', 'narration', 'multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    4. 2-5 Module Planning
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['narration', 'multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    5. Bullet Healing & Narration
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['multilingual', 'neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    6. 6-Language Translation
+                  </div>
+                  <div className={`p-2 rounded-lg border ${['neural_tts', 'completed'].includes(stage) ? 'border-orange/40 bg-orange/5 text-fg font-semibold' : 'border-line text-muted'}`}>
+                    7. Edge Neural TTS Voices
+                  </div>
+                  <div className={`p-2 rounded-lg border ${stage === 'completed' ? 'border-green-500/40 bg-green-500/5 text-green-500 font-semibold' : 'border-line text-muted'}`}>
+                    8. Course Ready
+                  </div>
+                </div>
               </div>
             )}
           </div>

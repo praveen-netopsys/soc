@@ -4,11 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.face import router as face_router
 from api.transcribe import router as transcribe_router
 from api.tts import router as tts_router
+from api.slides import router as slides_router
 from services.face_service import get_face_service
 
 app = FastAPI(
     title="SkillBridge AI Service",
-    description="Python microservice for face biometrics, Whisper speech transcription, and Neural TTS",
+    description="Python microservice for face biometrics, Whisper speech transcription, Neural TTS, and 1080p slide rendering",
     version="1.0.0"
 )
 
@@ -25,6 +26,33 @@ app.add_middleware(
 app.include_router(face_router)
 app.include_router(transcribe_router)
 app.include_router(tts_router, prefix="/api/tts", tags=["TTS"])
+app.include_router(slides_router)
+
+# Mount Explain Studio presentation and narration engine natively (workspace priority)
+import sys
+from pathlib import Path
+_local_explain = Path(__file__).resolve().parent.parent / "explain-studio-local-frontend-server-backend" / "backend"
+_candidates = [
+    _local_explain,
+    Path("C:/Users/pavankumar/Music/Skill-Bridge/explain-studio-local-frontend-server-backend/backend"),
+]
+for _p in _candidates:
+    if _p.exists() and str(_p.resolve()) not in sys.path:
+        sys.path.insert(0, str(_p.resolve()))
+        break
+
+try:
+    from app.routers.jobs import router as jobs_router
+    from app.routers.multilingual import router as multilingual_router
+    from app.routers.ai import router as ai_router
+    from app.db import init_db
+    init_db()
+    app.include_router(jobs_router)
+    app.include_router(multilingual_router)
+    app.include_router(ai_router)
+    print("Explain Studio presentation and narration engine natively mounted into SkillBridge AI Service!")
+except Exception as e:
+    print(f"Explain Studio router mount warning: {e}")
 
 @app.on_event("startup")
 def startup_event():

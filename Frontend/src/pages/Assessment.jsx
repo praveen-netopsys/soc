@@ -4,67 +4,67 @@ import { api } from '../services/api'
 import { triggerCertificateBlast } from '../utils/confettiBlast'
 import { getStudentUser } from '../utils/authSession'
 
-const fallbackQuestions = [
+const buildDynamicFallbackQuestions = (courseTitle = 'Safety & Operations', lessonTitle = 'Core Principles') => [
   {
     id: 1,
-    prompt: 'What is the primary advantage of using machine learning over traditional programming?',
+    prompt: `What is the primary operational objective emphasized in "${lessonTitle}"?`,
     options: [
-      'It requires less computing power',
-      'It can learn patterns from data without explicit programming',
-      'It always produces perfect results',
-      'It is easier to implement than regular code'
+      `Strict adherence to verified operational standards and safety procedures for ${lessonTitle}`,
+      'Ignoring pre-shift inspection guidelines',
+      'Operating beyond approved manufacturer ratings',
+      'Bypassing required personal protective equipment'
     ],
-    answer: 1,
-    explanation: 'Machine learning excels at learning patterns from data automatically, making it powerful for complex tasks where explicit rules are hard to define.'
+    answer: 0,
+    explanation: `Strict adherence to verified operational standards ensures personal safety and procedural compliance for ${lessonTitle}.`
   },
   {
     id: 2,
-    prompt: 'Which step typically comes first in a machine learning workflow?',
+    prompt: `How are procedures in "${lessonTitle}" validated prior to execution?`,
     options: [
-      'Model deployment and real-time monitoring',
-      'Data collection, cleaning, and preparation',
-      'Hyperparameter tuning and optimization',
-      'Evaluating performance metrics'
+      'By following standard inspection checklists and confirming operational readiness',
+      'By guessing operational parameters',
+      'By skipping equipment condition checks',
+      'By operating damaged machinery without reporting'
     ],
-    answer: 1,
-    explanation: 'High quality data is essential before training any model. Data collection and preparation form the critical first foundation of any ML project.'
+    answer: 0,
+    explanation: 'Standard inspection checklists and condition confirmation ensure equipment reliability and prevent operational hazards.'
   },
   {
     id: 3,
-    prompt: 'Which type of learning uses labeled training data?',
+    prompt: `What immediate action is required if a non-compliance or hazard is observed in "${lessonTitle}"?`,
     options: [
-      'Unsupervised Learning',
-      'Reinforcement Learning',
-      'Supervised Learning',
-      'Deep Learning'
+      'Immediately halt operation, report the hazard, and apply corrective protocols',
+      'Continue operation at normal speed',
+      'Cover up the hazard without recording it',
+      'Wait until the end of the week to mention it'
     ],
-    answer: 2,
-    explanation: 'Supervised learning uses labeled data where both inputs and expected target outputs are provided during training.'
+    answer: 0,
+    explanation: 'Prompt reporting and immediate hazard correction prevent dangerous situations from escalating into severe accidents.'
   },
   {
     id: 4,
-    prompt: 'Overfitting in machine learning models usually implies:',
+    prompt: `Who is responsible for maintaining safety and operational standards during "${lessonTitle}"?`,
     options: [
-      'The model performs exceptionally well on unseen test data',
-      'The model memorizes training data and generalizes poorly to new data',
-      'The model requires zero evaluation metrics',
-      'The model runs significantly faster on CPU'
+      'Every team member and operator involved in the workflow',
+      'Only external inspectors',
+      'Nobody once the shift begins',
+      'Only the equipment manufacturer'
     ],
-    answer: 1,
-    explanation: 'Overfitting happens when a model learns noise and details from the training set so closely that it negatively impacts performance on new unseen data.'
+    answer: 0,
+    explanation: 'Safety is a shared responsibility across all operators and personnel involved in the workflow.'
   },
   {
     id: 5,
-    prompt: 'Which metric is commonly used for evaluating classification model performance?',
+    prompt: `What is the key takeaway from completing the "${lessonTitle}" module in "${courseTitle}"?`,
     options: [
-      'Mean Squared Error (MSE)',
-      'Accuracy score derived from confusion matrix',
-      'Browser page load time',
-      'Database index count'
+      'Consistently executing operations with discipline, vigilance, and verified compliance',
+      'Rushing tasks to finish early without inspections',
+      'Treating safety guidelines as optional suggestions',
+      'Disabling warning sensors to avoid interruptions'
     ],
-    answer: 1,
-    explanation: 'Classification models are evaluated using metrics like Accuracy, Precision, Recall, and F1-score derived from a confusion matrix.'
-  },
+    answer: 0,
+    explanation: `Consistent discipline, vigilance, and compliance form the cornerstone of operational excellence in "${courseTitle}".`
+  }
 ]
 
 const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onExit, onFinishAssessment }) => {
@@ -89,10 +89,8 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
     } else if (course && course.isCustom && course.quiz && course.quiz.length > 0) {
       source = course.quiz
     } else {
-      source = fallbackQuestions
+      source = buildDynamicFallbackQuestions(course?.title || 'Safety & Operations', lessonTitle || 'Core Principles')
     }
-
-    const TARGET_DISTRIBUTION = [1, 3, 2, 0, 3] // Option B, Option D, Option C, Option A, Option D
 
     const mapped = source.map((q, idx) => {
       const origCorrectIdx = q.answerIndex !== undefined ? q.answerIndex : q.answer !== undefined ? q.answer : 0
@@ -100,47 +98,43 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
 
       const correctText = opts[origCorrectIdx] || opts[0]
 
-      // Balance answer choices across A, B, C, D so correct answer is not stuck on Option A
-      const targetIdx = TARGET_DISTRIBUTION[idx % TARGET_DISTRIBUTION.length] % opts.length
-      if (origCorrectIdx !== targetIdx && targetIdx < opts.length) {
-        const temp = opts[targetIdx]
-        opts[targetIdx] = correctText
-        opts[origCorrectIdx] = temp
+      // Truly randomize options across positions A, B, C, D using Fisher-Yates shuffle
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
       }
       const finalAnswerIdx = opts.indexOf(correctText)
 
       let explanationText = q.explanation
       if (!explanationText || explanationText.length < 5) {
-        if (source === fallbackQuestions) {
-          explanationText = fallbackQuestions[idx % fallbackQuestions.length]?.explanation
-        } else {
-          explanationText = correctText
-            ? `"${correctText}" is correct because it directly satisfies the requirement described in this question.`
-            : 'Review the correct answer highlighted above to strengthen your understanding.'
-        }
+        explanationText = correctText
+          ? `"${correctText}" is correct because it directly satisfies the requirement described in this question.`
+          : 'Review the correct answer highlighted above to strengthen your understanding.'
       }
 
       return {
         id: idx + 1,
         prompt: q.question || q.prompt || `Question ${idx + 1}`,
         options: opts,
-        answer: finalAnswerIdx >= 0 ? finalAnswerIdx : targetIdx,
+        answer: finalAnswerIdx >= 0 ? finalAnswerIdx : 0,
         explanation: explanationText
       }
     })
 
-    // Guarantee EXACTLY 5 questions
-    if (mapped.length >= 5) {
-      return mapped.slice(0, 5)
+    // Guarantee at least 5 questions for single chapter, or at least 10 for final assessment
+    const minRequired = isFinalAssessment ? 10 : 5;
+    if (mapped.length >= minRequired) {
+      return isFinalAssessment ? mapped : mapped.slice(0, 5);
     } else {
-      const extraNeeded = 5 - mapped.length
-      const padding = fallbackQuestions.slice(0, extraNeeded).map((q, idx) => ({
+      const extraNeeded = minRequired - mapped.length;
+      const dynamicList = buildDynamicFallbackQuestions(course?.title || 'Safety & Operations', lessonTitle || 'Core Principles');
+      const padding = dynamicList.slice(0, extraNeeded).map((q, idx) => ({
         ...q,
         id: mapped.length + idx + 1
-      }))
-      return [...mapped, ...padding]
+      }));
+      return [...mapped, ...padding];
     }
-  }, [quizQuestions, course])
+  }, [quizQuestions, course, lessonTitle, isFinalAssessment])
 
   const question = activeQuestions[index]
 
@@ -173,7 +167,7 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
         )
 
         if (isLastLesson) {
-          const passThreshold = 3 // 60% passing mark
+          const passThreshold = Math.ceil(activeQuestions.length * 0.6) // 60% passing mark
           if (score >= passThreshold) {
             const completedNow = new Date()
             const formattedNow = completedNow.toLocaleDateString('en-US', {
@@ -243,7 +237,7 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
           <span className="text-4xl">⚠️</span>
           <h2 className="text-xl font-bold text-[#1e2e4a] mt-3">Final Assessment Not Passed</h2>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            You scored <span className="font-bold text-amber-600">{scorePercentage}%</span> ({score}/5). You need at least <span className="font-bold text-emerald-600">60%</span> to pass and earn your course certificate.
+            You scored <span className="font-bold text-amber-600">{scorePercentage}%</span> ({score}/{activeQuestions.length}). You need at least <span className="font-bold text-emerald-600">60%</span> to pass and earn your course certificate.
           </p>
           <div className="flex justify-center gap-3 mt-6">
             <button
@@ -301,8 +295,8 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
                 : (course?.title || lessonTitle || 'Course Assessment')}
             </p>
 
-            {/* Segmented 5-Step Progress Bar */}
-            <div className="grid grid-cols-5 gap-3 max-w-md mx-auto mt-4 mb-2 w-full">
+            {/* Dynamic Step Progress Bar */}
+            <div className="flex items-center gap-1.5 sm:gap-2 max-w-lg mx-auto mt-4 mb-2 w-full">
               {activeQuestions.map((q, i) => {
                 let stepColor = 'bg-slate-200/90'
                 const isStepChecked = i < index || (i === index && isChecked)
@@ -316,7 +310,7 @@ const Assessment = ({ course, lessonTitle, quizQuestions, isFinalAssessment, onE
                 return (
                   <div
                     key={q.id}
-                    className={`h-2 rounded-full transition-all duration-300 ${stepColor}`}
+                    className={`flex-1 h-2 rounded-full transition-all duration-300 ${stepColor}`}
                   />
                 )
               })}

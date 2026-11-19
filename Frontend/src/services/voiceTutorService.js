@@ -253,6 +253,13 @@ export const KNOWN_SELF_ECHO_PATTERNS = [
 
 // Phonetic misrecognition dictionary for popular voice assistant names
 const NAME_PHONETIC_VARIANTS = {
+  kimi: [
+    'kimi', 'kimmy', 'kimmie', 'kemi', 'kemy',
+    '吉米', '基米', '柯米',
+    'கிமி', 'கீமி', 'கிமீ',
+    'కిమి', 'కీమి',
+    'কিমি', 'কীমি'
+  ],
   veda: ['veda', 'vedha', 'vaida', 'veeda', 'weda'],
   maya: ['maya', 'maia', 'mya', 'maiya'],
   aria: ['aria', 'area', 'arya', 'aarya', 'ariya', 'auria', 'oria', 'arria'],
@@ -297,22 +304,21 @@ export const containsWakeWord = (text, customWakeWord = null, aiName = null) => 
 
   if (cleanAiName) {
     const escapedName = cleanAiName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const multiGreetingPrefix = '(?:^|[\\s.,!?-])(?:hey|hi|hello|ok|okay|ask|yo|hay|heya|hiya|dear|call|calling|halo|helo|hai|嘿|嗨|你好|喂|请问|ஹே|ஹாய்|ஹலோ|வணக்கம்|హே|హాయ్|హలో|నమస్కారం|হে|হেই|হাই|হ্যালো|নমস্কার)';
     const customPatterns = [
-      new RegExp(`(?:^|\\b)(?:hey|hi|hello|ok|okay|ask|yo|hay|heya|hiya|dear|call|calling)\\s+${escapedName}\\b`, 'i'),
-      new RegExp(`\\b${escapedName}\\b`, 'i'),
+      new RegExp(`${multiGreetingPrefix}\\s*${escapedName}\\b`, 'iu'),
+      new RegExp(`(?:^|[\\s.,!?-])${escapedName}(?:$|[\\s.,!?-])`, 'iu'),
     ];
 
     if (cleanWakeWord) {
       const escapedWake = cleanWakeWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      customPatterns.push(new RegExp(`(?:^|\\b)${escapedWake}\\b`, 'i'));
+      customPatterns.push(new RegExp(`(?:^|[\\s.,!?-])${escapedWake}(?:$|[\\s.,!?-])`, 'iu'));
     }
 
     const phoneticList = NAME_PHONETIC_VARIANTS[nameLower] || [nameLower];
     for (const variant of phoneticList) {
-      if (variant !== nameLower) {
-        const escapedVar = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        customPatterns.push(new RegExp(`(?:^|\\b)(?:hey|hi|hello|ok|okay|ask|yo|hay|heya|hiya|dear|call|calling)?\\s*${escapedVar}\\b`, 'i'));
-      }
+      const escapedVar = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      customPatterns.push(new RegExp(`${multiGreetingPrefix}?\\s*${escapedVar}(?:$|[\\s.,!?-])`, 'iu'));
     }
 
     if (customPatterns.some((pattern) => pattern.test(normalized))) {
@@ -320,6 +326,14 @@ export const containsWakeWord = (text, customWakeWord = null, aiName = null) => 
     }
 
     if (tokens.some((token) => phoneticList.includes(token.toLowerCase()))) {
+      return true;
+    }
+
+    // Direct substring match for AI name or its native phonetics
+    if (nameLower.length >= 3 && normalized.includes(nameLower)) {
+      return true;
+    }
+    if (phoneticList.some((p) => normalized.includes(p.toLowerCase()))) {
       return true;
     }
   }
@@ -375,8 +389,9 @@ export const extractQuestionFromWakeWord = (
   // If a custom company AI name is configured, strip it from the start of the question
   if (cleanAiName) {
     const escapedName = cleanAiName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const multiGreetingPrefix = '(?:hey|hi|hello|ok|okay|ask|hay|heya|hiya|yo|dear|here|hear|excuse\\s+me|hai|helo|halo|tolong|boleh|嘿|嗨|你好|喂|请问|问一下|ஹே|ஹாய்|ஹலோ|வணக்கம்|ஏய்|சொல்லு|హே|హాయ్|హలో|నమస్కారం|ఏయ్|చెప్పు|হে|হেই|হাই|হ্যালো|নমস্কার|ওহে|বলো)?';
     clean = clean.replace(
-      new RegExp(`^(?:hey|hi|hello|ok|okay|ask|hay|heya|hiya|yo|dear|here|hear|excuse\\s+me|hai|helo|halo|tolong|boleh)?\\s*(?:${escapedName})\\s*[,.:!?-]*`, 'iu'),
+      new RegExp(`^${multiGreetingPrefix}\\s*(?:${escapedName})\\s*[,.:!?-]*`, 'iu'),
       ''
     );
 
@@ -385,7 +400,7 @@ export const extractQuestionFromWakeWord = (
       for (const variant of phoneticList) {
         const escapedVar = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         clean = clean.replace(
-          new RegExp(`^(?:hey|hi|hello|ok|okay|ask|hay|heya|hiya|yo|dear|here|hear|excuse\\s+me)?\\s*(?:${escapedVar})\\s*[,.:!?-]*`, 'iu'),
+          new RegExp(`^${multiGreetingPrefix}\\s*(?:${escapedVar})\\s*[,.:!?-]*`, 'iu'),
           ''
         );
       }
@@ -419,6 +434,33 @@ export const extractQuestionFromWakeWord = (
   // Telugu
   clean = clean.replace(
     /^(?:హే|హాయ్|హలో|నమస్కారం|ఏయ్)?\s*(?:ఆరియా|ఆర్యా|అరియా|ఏరియా)\s*[,.:!?-]*/iu,
+    ''
+  );
+
+  // Strip tutor acknowledgment echoes from the beginning of user speech
+  // e.g. "Yes, I'm listening what is safe working procedure" -> "what is safe working procedure"
+  clean = clean.replace(
+    /^(?:(?:yes|yeah|ya)?\s*,?\s*(?:tell\s+me|i'?m\s+listening|i\s+am\s+listening|listening|please\s+tell\s+me|im\s+listening)\s*[,.:!?-]*\s*)+/iu,
+    ''
+  );
+  clean = clean.replace(
+    /^(?:我在听[，,、？?]?\s*(?:请问有什么可以帮您|请问|请讲)?[，,、？?.:!?-]*\s*)+/iu,
+    ''
+  );
+  clean = clean.replace(
+    /^(?:(?:ya|baik)?\s*,?\s*(?:saya\s+mendengar|sila\s+beritahu(?:\s+saya)?)\s*[,.:!?-]*\s*)+/iu,
+    ''
+  );
+  clean = clean.replace(
+    /^(?:(?:சொல்லுங்கள்|நான்\s*கேட்கிறேன்|சொல்லுங்கள்\s*நான்\s*கேட்கிறேன்)\s*[,.:!?-]*\s*)+/iu,
+    ''
+  );
+  clean = clean.replace(
+    /^(?:(?:হ্যাঁ\s*বলুন|আমি\s*শুনছি|বলুন\s*আমি\s*শুনছি)\s*[,.:!?-]*\s*)+/iu,
+    ''
+  );
+  clean = clean.replace(
+    /^(?:(?:చెప్పండి|నేను\s*వింటున్నాను|చెప్పండి\s*నేను\s*వింటున్నాను)\s*[,.:!?-]*\s*)+/iu,
     ''
   );
 
@@ -565,8 +607,8 @@ export const isDanglingFragment = (text) => {
     return true;
   }
 
-  // Non-Latin scripts without spaces (e.g. Chinese characters: \u4e00-\u9fa5)
-  if (/[\u4e00-\u9fa5]/.test(t) && t.length >= 4) {
+  // Non-Latin scripts (e.g. Chinese, Tamil, Telugu, Bangla)
+  if (/[\u4e00-\u9fa5\u0b80-\u0bff\u0c00-\u0c7f\u0980-\u09ff]/.test(t) && t.length >= 3) {
     return false;
   }
 
@@ -711,7 +753,11 @@ export class VoiceTutorManager {
        LANGUAGE
     ---------------------------------------------------------- */
 
-    this.langCode = 'en-US';
+    this.langCode = getSpeechLanguageCode(
+      options.language ||
+      options.langCode ||
+      'en-US'
+    );
   }
 
 

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <linearGradient id="panelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+  </defs>
+  <!-- Solar Panels -->
+  <rect x="50" y="210" width="120" height="80" rx="6" fill="url(#panelGrad)" stroke="#38bdf8" stroke-width="3"/>
+  <line x1="90" y1="210" x2="90" y2="290" stroke="#bae6fd" stroke-width="2"/>
+  <line x1="130" y1="210" x2="130" y2="290" stroke="#bae6fd" stroke-width="2"/>
+  <line x1="50" y1="250" x2="170" y2="250" stroke="#bae6fd" stroke-width="2"/>
+
+  <rect x="330" y="210" width="120" height="80" rx="6" fill="url(#panelGrad)" stroke="#38bdf8" stroke-width="3"/>
+  <line x1="370" y1="210" x2="370" y2="290" stroke="#bae6fd" stroke-width="2"/>
+  <line x1="410" y1="210" x2="410" y2="290" stroke="#bae6fd" stroke-width="2"/>
+  <line x1="330" y1="250" x2="450" y2="250" stroke="#bae6fd" stroke-width="2"/>
+
+  <!-- Trusses -->
+  <rect x="170" y="244" width="40" height="12" fill="#cbd5e1"/>
+  <rect x="290" y="244" width="40" height="12" fill="#cbd5e1"/>
+
+  <!-- Satellite Bus Core -->
+  <rect x="210" y="190" width="80" height="120" rx="10" fill="#e2e8f0" stroke="#94a3b8" stroke-width="4"/>
+  <!-- Gold Foil Accent -->
+  <rect x="220" y="210" width="60" height="80" rx="4" fill="#eab308" opacity="0.9"/>
+  <!-- Dish Antenna -->
+  <path d="M 220,170 Q 250,140 280,170" fill="none" stroke="#64748b" stroke-width="6"/>
+  <line x1="250" y1="190" x2="250" y2="155" stroke="#475569" stroke-width="4"/>
+  <circle cx="250" cy="150" r="6" fill="#38bdf8"/>
+</svg>

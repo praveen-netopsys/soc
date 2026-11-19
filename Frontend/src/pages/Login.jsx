@@ -328,15 +328,15 @@ const Login = ({ onSuccess }) => {
             >
               <form className="flex flex-col gap-[14px]" onSubmit={handlePasswordLogin} noValidate>
                 <label className="relative block">
-                  <span className="sr-only">Email address</span>
+                  <span className="sr-only">Email, FIN or Phone</span>
                   <span className="pointer-events-none absolute top-1/2 left-[16px] -translate-y-1/2 text-slate-400">
                     <MailIcon />
                   </span>
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     autoComplete="username"
-                    placeholder="Email address"
+                    placeholder="Email address, FIN, or mobile"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={inputClass}

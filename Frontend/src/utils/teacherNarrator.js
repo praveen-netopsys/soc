@@ -1,19 +1,21 @@
 /**
  * Teacher Narrator Utility
  * Converts raw slide bullets, fragmented headings, and dense document notes
- * into warm, fluent, relevant instructional lectures spoken like a real teacher
- * instead of an AI reading a book fast.
+ * into clean, natural instructional sentences spoken by a human teacher.
+ * Eliminates repetitive boilerplate prefixes, artificial transition fillers,
+ * and duplicates so every lesson sounds authentic, direct, and professional.
  */
 
 import { stripSlidePlaceholders, cleanUnsupportedWords } from './textCleaner';
 
 /**
- * Clean a single line of raw slide text into conversational spoken English
+ * Clean a single line of raw slide text into clean spoken text
  */
 function cleanPhraseForSpeech(phrase) {
   if (!phrase || typeof phrase !== 'string') return '';
   return phrase
     .replace(/^[-*•➔\d\.]+\s*/, '') // Remove bullet dots, dashes, numbers
+    .replace(/^[💡🎯📋⚠️📌]\s*/, '')  // Remove leading symbol emojis
     .replace(/[#*_~`^|<>]/g, '')     // Remove markdown syntax
     .replace(/\s*=\s*/g, ' means ')  // Convert = to "means"
     .replace(/\s*&\s*/g, ' and ')    // Convert & to "and"
@@ -24,19 +26,17 @@ function cleanPhraseForSpeech(phrase) {
 }
 
 /**
- * Transform raw lesson content into teacher-style instructional sentences
+ * Transform raw lesson content into clean, natural instructional sentences
  * @param {string} rawContent - Raw explanation or chunk text
  * @param {string} lessonTitle - The title of the lesson
  * @param {string} courseTitle - The course name
- * @returns {string[]} Array of warm, connected, instructional spoken sentences
+ * @returns {string[]} Array of clean, natural, deduplicated sentences
  */
 export function buildTeacherLectureSentences(rawContent, lessonTitle = '', courseTitle = '') {
   if (!rawContent || typeof rawContent !== 'string') {
-    const topic = lessonTitle || 'this topic';
+    const topic = cleanPhraseForSpeech(lessonTitle) || 'this topic';
     return [
-      `Welcome to this lesson on ${topic}.`,
-      `We will cover the essential operational concepts, practical procedures, and safety standards step by step.`,
-      `Please follow along with the material displayed on your screen.`
+      `In this section, we examine the essential concepts for ${topic}.`
     ];
   }
 
@@ -44,127 +44,54 @@ export function buildTeacherLectureSentences(rawContent, lessonTitle = '', cours
   const rawLines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
 
   const sentences = [];
-  const topicName = cleanPhraseForSpeech(lessonTitle) || 'this lesson';
-
-  // Section classifiers
-  const introPhrases = [
-    `Welcome! In this lesson, we will focus on ${topicName}.`,
-    `Let's examine the key principles and operational requirements for ${topicName}.`
-  ];
-
-  let hasIntroduced = false;
-  let bulletCount = 0;
-  let isInSafetySection = false;
+  const seenSentences = new Set();
 
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
     if (!line || line.length < 3) continue;
 
-    const lower = line.toLowerCase();
-
-    // Check if line is a markdown section header
-    const isHeader = /^#{1,4}\s+/.test(line) || /^[💡🎯📋⚠️📌]/.test(line);
     const cleanLine = cleanPhraseForSpeech(line);
+    if (!cleanLine || cleanLine.length < 3) continue;
 
-    if (isHeader) {
-      if (lower.includes('safety') || lower.includes('warning') || lower.includes('hazard') || lower.includes('compliance')) {
-        isInSafetySection = true;
-        sentences.push(`Now, let's pay close attention to the critical safety rules and compliance procedures.`);
-      } else if (lower.includes('key takeaways') || lower.includes('summary') || lower.includes('conclusion')) {
-        sentences.push(`To wrap up this section, let's review the main takeaways.`);
-      } else if (lower.includes('operational') || lower.includes('standards') || lower.includes('protocols') || lower.includes('action')) {
-        sentences.push(`Next, let's review the practical operating guidelines you should follow on the job.`);
-      } else if (!hasIntroduced) {
-        sentences.push(introPhrases[0]);
-        hasIntroduced = true;
-      }
-      continue;
-    }
+    // Strip common repetitive robotic prefixes if already present in text
+    const strippedLine = cleanLine
+      .replace(/^(?:welcome(?:!| to this (?:lesson|module|course|section)[^.]*\.?)?|today we will explore[^.]*\.?)\s*/i, '')
+      .replace(/^(?:first and foremost,?\s*(?:always\s*)?(?:ensure that|remember to)?|in addition,?\s*(?:it is mandatory to)?|furthermore,?\s*(?:you must)?|to begin with,?\s*|next,?\s*|also,?\s*make sure to|additionally,?\s*|another important point is to|now,?\s*let's pay close attention to[^.]*\.?)\s*/i, '')
+      .trim();
 
-    const isBullet = /^[-*•➔\d\.]+\s+/.test(line);
+    if (!strippedLine || strippedLine.length < 3) continue;
 
-    if (isBullet) {
-      bulletCount++;
-      let connector = '';
-      if (isInSafetySection) {
-        if (bulletCount % 3 === 1) connector = 'First and foremost, always ensure that ';
-        else if (bulletCount % 3 === 2) connector = 'In addition, it is mandatory to ';
-        else connector = 'Furthermore, you must ';
-      } else {
-        if (bulletCount === 1) connector = 'To begin with, ';
-        else if (bulletCount === 2) connector = 'Next, ';
-        else if (bulletCount === 3) connector = 'Also, make sure to ';
-        else if (bulletCount === 4) connector = 'Additionally, ';
-        else connector = 'Another important point is to ';
+    // Split paragraphs or multi-sentence lines into individual sentences
+    const subSentences = strippedLine.split(/(?<=[.!?])\s+/);
+
+    for (let sent of subSentences) {
+      sent = sent.trim();
+      if (!sent || sent.length < 4) continue;
+
+      // Capitalize first character
+      sent = sent.charAt(0).toUpperCase() + sent.slice(1);
+
+      // Ensure proper end punctuation
+      if (!/[.!?]$/.test(sent)) {
+        sent += '.';
       }
 
-      // If line already starts with a verb or instruction
-      let spokenSentence = connector + cleanLine;
-      // Ensure sentence ends with punctuation
-      if (!/[.!?]$/.test(spokenSentence)) {
-        spokenSentence += '.';
-      }
-      sentences.push(spokenSentence);
-    } else {
-      // Normal narrative sentence
-      // If it looks like a lone title or fragment
-      if (cleanLine.length < 40 && !/[.!?]$/.test(cleanLine)) {
-        if (!hasIntroduced) {
-          sentences.push(`Let's begin by discussing ${cleanLine}.`);
-          hasIntroduced = true;
-        } else {
-          sentences.push(`Regarding ${cleanLine}:`);
-        }
-      } else {
-        let sent = cleanLine;
-        if (!/[.!?]$/.test(sent)) sent += '.';
+      // Deduplicate sentences
+      const normalized = sent.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+      if (normalized.length > 5 && !seenSentences.has(normalized)) {
+        seenSentences.add(normalized);
         sentences.push(sent);
       }
     }
   }
 
-  // If no sentences were generated, provide clear default teacher script
+  // If no sentences were parsed, fallback to clean lesson topic
   if (sentences.length === 0) {
+    const topic = cleanPhraseForSpeech(lessonTitle) || 'this topic';
     return [
-      `In this lesson, we examine ${topicName}.`,
-      `Please review the operational requirements and safety guidelines shown on your screen.`,
-      `Feel free to ask any questions if you need further clarification.`
+      `In this section, we examine the operational requirements and safety guidelines for ${topic}.`
     ];
   }
 
-  // Add warm opening if missing
-  if (!hasIntroduced && sentences.length > 0) {
-    sentences.unshift(`Welcome! Today we will explore ${topicName}.`);
-  }
-
-  // Break any unusually long sentences (> 180 chars) into shorter, easy-to-digest teacher statements
-  const refinedSentences = [];
-  for (const s of sentences) {
-    if (s.length > 180 && s.includes(',')) {
-      const parts = s.split(/(?<=,)\s+/);
-      let buffer = '';
-      for (const p of parts) {
-        if ((buffer + ' ' + p).length < 140) {
-          buffer = buffer ? buffer + ' ' + p : p;
-        } else {
-          if (buffer) {
-            let b = buffer.trim();
-            if (!/[.!?]$/.test(b)) b += '.';
-            refinedSentences.push(b);
-          }
-          buffer = p;
-        }
-      }
-      if (buffer) {
-        let b = buffer.trim();
-        if (!/[.!?]$/.test(b)) b += '.';
-        refinedSentences.push(b);
-      }
-    } else {
-      refinedSentences.push(s);
-    }
-  }
-
-  return refinedSentences;
+  return sentences;
 }
-

@@ -1,0 +1,1306 @@
+{
+  "job_id": "067fca45-a90e-444a-8c84-57d45106b3c3",
+  "title": "8758A328-4D65-4Ca0-96De-A2B37706584F",
+  "total_slides": 30,
+  "total_modules": 6,
+  "languages": [
+    "en",
+    "zh-CN",
+    "ms",
+    "ta",
+    "bn",
+    "te"
+  ],
+  "modules": [
+    {
+      "module_id": "module_01",
+      "module_number": 1,
+      "title": "Module 1: Core Operational Concepts",
+      "description": "Covers operational standards for slides 1 to 5.",
+      "learning_objectives": [
+        "Understand procedures on slides 1 to 5"
+      ],
+      "slide_numbers": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "slides": [
+        {
+          "slide_number": 1,
+          "slide_id": "slide_1",
+          "module_id": "module_01",
+          "title": "5S Refresher Course",
+          "key_points": [],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_1_img_1.png"
+          ],
+          "slide_image_path": "slides/slide_1.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/1",
+          "explanations": {
+            "en": "5S Refresher Course outlines the critical standards and procedures we will cover today. Understanding these foundational principles is essential for maintaining safety across all operations.",
+            "zh-CN": "5S 进修课程概述了我们今天将介绍的关键标准和程序。了解这些基本原则对于维护所有操作的安全至关重要。",
+            "te": "5S రిఫ్రెషర్ కోర్సు మేము ఈరోజు కవర్ చేయబోయే క్లిష్టమైన ప్రమాణాలు మరియు విధానాలను వివరిస్తుంది. అన్ని కార్యకలాపాలలో భద్రతను నిర్వహించడానికి ఈ పునాది సూత్రాలను అర్థం చేసుకోవడం చాలా అవసరం.",
+            "bn": "5S রিফ্রেশার কোর্স আমরা আজকে কভার করব এমন গুরুত্বপূর্ণ মান এবং পদ্ধতির রূপরেখা দেয়। সমস্ত অপারেশন জুড়ে নিরাপত্তা বজায় রাখার জন্য এই মৌলিক নীতিগুলি বোঝা অপরিহার্য।",
+            "ta": "5S ரெஃப்ரெஷர் பாடநெறி இன்று நாம் விவாதிக்கும் முக்கியமான தரநிலைகள் மற்றும் நடைமுறைகளை கோடிட்டுக் காட்டுகிறது. அனைத்து செயல்பாடுகளிலும் பாதுகாப்பைப் பேணுவதற்கு இந்த அடிப்படைக் கொள்கைகளைப் புரிந்துகொள்வது அவசியம்.",
+            "ms": "Kursus Penyegaran 5S menggariskan piawaian dan prosedur kritikal yang akan kami bincangkan hari ini. Memahami prinsip asas ini adalah penting untuk mengekalkan keselamatan di semua operasi."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/1",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/1",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/1",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/1",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/1",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/1"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 2,
+          "slide_id": "slide_2",
+          "module_id": "module_01",
+          "title": "Agenda",
+          "key_points": [
+            "Safety & Health Contact",
+            "S Package briefing",
+            "Site 5S audit",
+            "Assessment Review"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_2.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/2",
+          "explanations": {
+            "en": "Looking now at agenda, compliance with these specific instructions is mandatory. Safety & Health Contact. Furthermore, s Package briefing. Also note that site 5S audit. Lastly, assessment Review. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "现在看看议程，必须遵守这些具体指示。安全与健康联系。此外，还有包装简报。还要注意现场5S审核。最后，评估审查。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "এখন আলোচ্যসূচির দিকে তাকিয়ে, এই নির্দিষ্ট নির্দেশাবলী মেনে চলা বাধ্যতামূলক। নিরাপত্তা ও স্বাস্থ্য যোগাযোগ. উপরন্তু, s প্যাকেজ ব্রিফিং. এছাড়াও যে সাইট 5S অডিট নোট. সবশেষে, মূল্যায়ন পর্যালোচনা। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ta": "இப்போது நிகழ்ச்சி நிரலைப் பார்க்கும்போது, ​​இந்தக் குறிப்பிட்ட வழிமுறைகளுக்கு இணங்குவது கட்டாயம். பாதுகாப்பு மற்றும் சுகாதார தொடர்பு. மேலும், கள் தொகுப்பு விளக்கப்படம். தள 5S தணிக்கை என்பதையும் கவனத்தில் கொள்ளவும். இறுதியாக, மதிப்பீட்டு மதிப்பாய்வு. இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "ఇప్పుడు ఎజెండాను పరిశీలిస్తే, ఈ నిర్దిష్ట సూచనలను పాటించడం తప్పనిసరి. భద్రత & ఆరోగ్యం సంప్రదించండి. ఇంకా, s ప్యాకేజీ బ్రీఫింగ్. సైట్ 5S ఆడిట్ కూడా గమనించండి. చివరగా, మూల్యాంకన సమీక్ష. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ms": "Melihat agenda sekarang, pematuhan dengan arahan khusus ini adalah wajib. Hubungan Keselamatan & Kesihatan. Tambahan pula, s Pakej taklimat. Juga ambil perhatian bahawa audit tapak 5S. Akhir sekali, Penilaian Penilaian. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/2",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/2",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/2",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/2",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/2",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/2"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 3,
+          "slide_id": "slide_3",
+          "module_id": "module_01",
+          "title": "Safety & Health Contact",
+          "key_points": [],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_3_img_2.jpg",
+            "assets/slide_3_img_3.jpg"
+          ],
+          "slide_image_path": "slides/slide_3.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/3",
+          "explanations": {
+            "en": "Safety & Health Contact requires close attention to ensure safe and orderly operations.",
+            "zh-CN": "安全与健康 接触需要密切关注，以确保安全有序的操作。",
+            "te": "సురక్షితమైన మరియు క్రమబద్ధమైన కార్యకలాపాలను నిర్ధారించడానికి భద్రత & ఆరోగ్య సంప్రదింపుకు చాలా శ్రద్ధ అవసరం.",
+            "bn": "নিরাপদ এবং সুশৃঙ্খল ক্রিয়াকলাপগুলি নিশ্চিত করার জন্য সুরক্ষা এবং স্বাস্থ্য যোগাযোগের ঘনিষ্ঠ মনোযোগ প্রয়োজন।",
+            "ms": "Hubungan Keselamatan & Kesihatan memerlukan perhatian yang teliti untuk memastikan operasi yang selamat dan teratur.",
+            "ta": "பாதுகாப்பான மற்றும் ஒழுங்கான செயல்பாடுகளை உறுதிப்படுத்த பாதுகாப்பு மற்றும் சுகாதார தொடர்புக்கு அதிக கவனம் தேவை."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/3",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/3",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/3",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/3",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/3",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/3"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 4,
+          "slide_id": "slide_4",
+          "module_id": "module_01",
+          "title": "Definition of 5S",
+          "key_points": [
+            "Benefits of 5S",
+            "NatSteel Goals",
+            "Workstation Scoring Criteria",
+            "Practical Session (Roll play)"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_4.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/4",
+          "explanations": {
+            "en": "Next, let us focus on definition of 5S and the specific protocols required. Benefits of 5S. Furthermore, natSteel Goals. Also note that workstation Scoring Criteria. Practical Session (Roll play). Lastly, course Content. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ta": "அடுத்து, 5S இன் வரையறை மற்றும் தேவையான குறிப்பிட்ட நெறிமுறைகளில் கவனம் செலுத்துவோம். 5S இன் நன்மைகள். மேலும், natSteel இலக்குகள். பணிநிலைய மதிப்பெண் அளவுகோல் என்பதையும் கவனத்தில் கொள்ளவும். நடைமுறை அமர்வு (ரோல் ப்ளே). இறுதியாக, பாடத்தின் உள்ளடக்கம். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "తరువాత, 5S యొక్క నిర్వచనం మరియు అవసరమైన నిర్దిష్ట ప్రోటోకాల్‌లపై దృష్టి పెడతాము. 5S యొక్క ప్రయోజనాలు. ఇంకా, నాట్‌స్టీల్ గోల్స్. వర్క్‌స్టేషన్ స్కోరింగ్ ప్రమాణాలు కూడా గమనించండి. ప్రాక్టికల్ సెషన్ (రోల్ ప్లే). చివరగా, కోర్సు కంటెంట్. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "bn": "এর পরে, আসুন 5S এর সংজ্ঞা এবং প্রয়োজনীয় নির্দিষ্ট প্রোটোকলের উপর ফোকাস করি। 5S এর সুবিধা। উপরন্তু, natSteel লক্ষ্য. এছাড়াও লক্ষ্য করুন যে ওয়ার্কস্টেশন স্কোরিং মানদণ্ড। ব্যবহারিক অধিবেশন (রোল প্লে)। সবশেষে, কোর্সের বিষয়বস্তু। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "zh-CN": "接下来我们重点关注5S的定义以及所需的具体协议。 5S的好处。此外，natSteel 目标。另请注意工作站评分标准。实践课程（滚球）。最后是课程内容。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ms": "Seterusnya, mari kita fokus pada definisi 5S dan protokol khusus yang diperlukan. Faedah 5S. Tambahan pula, Matlamat natSteel. Juga ambil perhatian bahawa Kriteria Pemarkahan stesen kerja. Sesi Amali (Roll play). Akhir sekali, Kandungan kursus. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/4",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/4",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/4",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/4",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/4",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/4"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 5,
+          "slide_id": "slide_5",
+          "module_id": "module_01",
+          "title": "What is 5S?",
+          "key_points": [
+            "S is the short form for FIVE Japanese words:",
+            "SEIRI, SEITON, SEISO, SEIKETSU and SHITSUKE",
+            "Broadly translated, 5S means Good Housekeeping and Workplace Organization."
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_5.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/5",
+          "explanations": {
+            "en": "In this section, what is 5S? sets out clear operational expectations. S is the short form for FIVE Japanese words:. Furthermore, sEIRI, SEITON, SEISO, SEIKETSU and SHITSUKE. Also note that broadly translated, 5S means Good Housekeeping and Workplace Organization. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "te": "ఈ విభాగంలో, 5S అంటే ఏమిటి? స్పష్టమైన కార్యాచరణ అంచనాలను నిర్దేశిస్తుంది. S అనేది ఐదు జపనీస్ పదాలకు సంక్షిప్త రూపం:. ఇంకా, sEIRI, SEITON, SEISO, SEIKETSU మరియు SHITSUKE. విస్తృతంగా అనువదించబడిన 5S అంటే మంచి హౌస్ కీపింగ్ మరియు వర్క్‌ప్లేస్ ఆర్గనైజేషన్ అని కూడా గమనించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "bn": "এই বিভাগে 5S কি? পরিষ্কার অপারেশনাল প্রত্যাশা নির্ধারণ করে। S হল পাঁচটি জাপানি শব্দের সংক্ষিপ্ত রূপ: উপরন্তু, SEIRI, SEITON, SEISO, SEIKETSU এবং SHITSUKE। এছাড়াও মনে রাখবেন যে বিস্তৃতভাবে অনুবাদ করা হয়েছে, 5S এর অর্থ হল গুড হাউসকিপিং এবং ওয়ার্কপ্লেস অর্গানাইজেশন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "zh-CN": "在本节中，什么是5S？制定明确的运营预期。 S 是五个日语单词的缩写形式：。此外，还有sEIRI、SEITON、SEISO、SEIKETSU 和SHITSUKE。另请注意，从广义上讲，5S 意味着良好的内务管理和工作场所组织。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ta": "இந்த பிரிவில், 5S என்றால் என்ன? தெளிவான செயல்பாட்டு எதிர்பார்ப்புகளை அமைக்கிறது. S என்பது ஐந்து ஜப்பானிய வார்த்தைகளுக்கான குறுகிய வடிவம்:. மேலும், sEIRI, SEITON, SEISO, SEIKETSU மற்றும் SHITSUKE. 5S என்பது நல்ல வீட்டு பராமரிப்பு மற்றும் பணியிட அமைப்பு என்று பரவலாக மொழிபெயர்க்கப்பட்டுள்ளது என்பதையும் கவனத்தில் கொள்ளவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "ms": "Dalam bahagian ini, apakah itu 5S? menetapkan jangkaan operasi yang jelas. S ialah bentuk pendek untuk LIMA perkataan Jepun:. Tambahan pula, sEIRI, SEITON, SEISO, SEIKETSU dan SHITSUKE. Juga ambil perhatian bahawa diterjemahkan secara meluas, 5S bermaksud Pengemasan yang Baik dan Organisasi Tempat Kerja. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/5",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/5",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/5",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/5",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/5",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/5"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    },
+    {
+      "module_id": "module_02",
+      "module_number": 2,
+      "title": "Module 2: Core Operational Concepts",
+      "description": "Covers operational standards for slides 6 to 10.",
+      "learning_objectives": [
+        "Understand procedures on slides 6 to 10"
+      ],
+      "slide_numbers": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "slides": [
+        {
+          "slide_number": 6,
+          "slide_id": "slide_6",
+          "module_id": "module_02",
+          "title": "Meaning of 5S",
+          "key_points": [],
+          "table_summaries": [
+            "Japanese | In English | Meaning | How to remember SEIRI | Clearing | Sort out unnecessary items and discard them | Sort and Discard SEITON | Organising | Arrange necessary items in good order A place for everything Everything in its place | Systematically Arrange SEISO | Cleaning | Clean workplace and equipment thoroughly | Spick and Span SEIKETSU | Maintaining | Maintain the clean, tidy condition | Standardise SHITSUKE | Self-discipline | Doing what has been decided as a habit (conforming) | Self-discipline"
+          ],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_6.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/6",
+          "explanations": {
+            "en": "Turning to meaning of 5S, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "te": "5S యొక్క అర్థానికి వెళితే, ఇక్కడ చూపబడిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ta": "5S இன் அர்த்தத்திற்கு திரும்பினால், இங்கு காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "谈到 5S 的含义，此处显示的结构化标准建立了适用于日常活动的强制性控制。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "5S এর অর্থের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনন্দিন ক্রিয়াকলাপে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Beralih kepada maksud 5S, kriteria berstruktur yang ditunjukkan di sini mewujudkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/6",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/6",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/6",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/6",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/6",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/6"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 7,
+          "slide_id": "slide_7",
+          "module_id": "module_02",
+          "title": "What to look for:",
+          "key_points": [
+            "Unused/out dated/obsolete files, documents",
+            "Damaged, defective machine",
+            "Excess stocks",
+            "Outdated notices, posters, forms, documents"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_7.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/7",
+          "explanations": {
+            "en": "What to look for requires close attention to ensure safe and orderly operations. Unused/out dated/obsolete files, documents. Furthermore, damaged, defective machine. Also note that excess stocks. Outdated notices, posters, forms, documents. Junk mails. Lastly, s - SEIRI - Clearing. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ms": "Perkara yang perlu dicari memerlukan perhatian yang teliti untuk memastikan operasi yang selamat dan teratur. Fail, dokumen yang tidak digunakan/kehabisan tarikh/usang. Tambahan pula, mesin rosak, rosak. Juga ambil perhatian bahawa lebihan stok. Notis, poster, borang, dokumen yang lapuk. Mel sampah. Akhir sekali, s - SEIRI - Pembersihan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "பாதுகாப்பான மற்றும் ஒழுங்கான செயல்பாடுகளை உறுதிப்படுத்துவதற்கு என்ன பார்க்க வேண்டும் என்பதில் கவனம் தேவை. பயன்படுத்தப்படாத/காலாவதியான/காலாவதியான கோப்புகள், ஆவணங்கள். மேலும், சேதமடைந்த, பழுதடைந்த இயந்திரம். அதிகப்படியான பங்குகள் என்பதையும் கவனத்தில் கொள்ளவும். காலாவதியான அறிவிப்புகள், சுவரொட்டிகள், படிவங்கள், ஆவணங்கள். குப்பை அஞ்சல்கள். கடைசியாக, s - SEIRI - கிளியரிங். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "సురక్షితమైన మరియు క్రమబద్ధమైన కార్యకలాపాలను నిర్ధారించడానికి ఏమి చూడాలి అనేదానికి చాలా శ్రద్ధ అవసరం. ఉపయోగించని/కాలం చెల్లిన/నిరుపయోగమైన ఫైల్‌లు, పత్రాలు. ఇంకా, దెబ్బతిన్న, లోపభూయిష్ట యంత్రం. అదనపు స్టాక్స్ కూడా గమనించండి. కాలం చెల్లిన నోటీసులు, పోస్టర్లు, ఫారమ్‌లు, పత్రాలు. జంక్ మెయిల్స్. చివరగా, s - SEIRI - క్లియరింగ్. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "bn": "নিরাপদ এবং সুশৃঙ্খল ক্রিয়াকলাপ নিশ্চিত করার জন্য কী সন্ধান করতে হবে তার জন্য গভীর মনোযোগ প্রয়োজন। অব্যবহৃত/সেরা তারিখ/অপ্রচলিত ফাইল, নথি। উপরন্তু, ক্ষতিগ্রস্ত, ত্রুটিপূর্ণ মেশিন. এছাড়াও অতিরিক্ত স্টক নোট. পুরানো নোটিশ, পোস্টার, ফর্ম, নথি। জাঙ্ক মেইল। সবশেষে, s - SEIRI - ক্লিয়ারিং। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "zh-CN": "需要密切注意寻找什么，以确保安全有序的运营。未使用/过时/过时的文件、文档。此外，机器损坏、有缺陷。还要注意库存过剩。过时的通知、海报、表格、文件。垃圾邮件。最后，s - SEIRI - 清理。在开始在此区域工作之前，确保完全理解所有这些程序。"
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/7",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/7",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/7",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/7",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/7",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/7"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 8,
+          "slide_id": "slide_8",
+          "module_id": "module_02",
+          "title": "Do you experience:",
+          "key_points": [
+            "a lot of searching, delays things get mixed up missing items from shelves",
+            "Set-up a storage/filing system where things are:",
+            "Easy to see – proper labels and markings",
+            "Easy to take – neatly arranged & stacked"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_8.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/8",
+          "explanations": {
+            "en": "Next, let us focus on do you experience and the specific protocols required. A lot of searching, delays things get mixed up missing items from shelves. Furthermore, set-up a storage/filing system where things are:. Also note that easy to see – proper labels and markings. Easy to take – neatly arranged & stacked. Easy to return – no obstruction. Lastly, s - SEITON - Organizing. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "接下来，让我们重点谈谈您的经历以及所需的具体协议。大量的搜索、延误使得货架上丢失的物品变得混乱。此外，建立一个存储/归档系统，其中的内容是：另请注意易于查看的正确标签和标记。易于携带——整齐排列和堆叠。轻松返回——无阻碍。最后，s - SEITON - 组织。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "te": "తర్వాత, మీరు అనుభవిస్తున్నారా మరియు అవసరమైన నిర్దిష్ట ప్రోటోకాల్‌లపై దృష్టి పెడదాం. చాలా శోధించడం, ఆలస్యమైన అంశాలు షెల్ఫ్‌ల నుండి తప్పిపోయిన వస్తువులను కలపడం. ఇంకా, విషయాలు ఉన్న చోట నిల్వ/ఫైలింగ్ సిస్టమ్‌ను సెటప్ చేయండి: చూడటం సులభం అని కూడా గమనించండి - సరైన లేబుల్‌లు మరియు గుర్తులు. తీసుకోవడం సులభం - చక్కగా అమర్చబడి & పేర్చబడి ఉంటుంది. తిరిగి రావడం సులభం - అడ్డంకి లేదు. చివరగా, s - SEITON - ఆర్గనైజింగ్. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ta": "அடுத்து, உங்களுக்கு அனுபவம் உள்ளதா மற்றும் தேவையான குறிப்பிட்ட நெறிமுறைகள் குறித்து கவனம் செலுத்துவோம். நிறைய தேடுதல், தாமதங்கள் ஆகியவை அலமாரிகளில் இருந்து காணாமல் போன பொருட்களை கலக்கின்றன. மேலும், விஷயங்கள் இருக்கும் இடத்தில் ஒரு சேமிப்பு/தாக்கல் முறையை அமைக்கவும்: மேலும் பார்க்க எளிதானது - சரியான லேபிள்கள் மற்றும் அடையாளங்கள். எடுத்துக்கொள்வது எளிது - நேர்த்தியாக அடுக்கி வைக்கப்பட்டுள்ளது. திரும்புவது எளிது - எந்த தடையும் இல்லை. கடைசியாக, s - SEITON - ஒழுங்கமைத்தல். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "bn": "এর পরে, আমাদের আপনার অভিজ্ঞতা এবং প্রয়োজনীয় নির্দিষ্ট প্রোটোকলের উপর ফোকাস করা যাক। অনেক খোঁজাখুঁজি, বিলম্বের কারণে তাক থেকে হারিয়ে যাওয়া আইটেমগুলি মিশে যায়। তদ্ব্যতীত, একটি স্টোরেজ/ফাইলিং সিস্টেম সেট আপ করুন যেখানে জিনিসগুলি রয়েছে: এছাড়াও লক্ষ্য করুন যে দেখতে সহজ - সঠিক লেবেল এবং চিহ্ন। নেওয়া সহজ - সুন্দরভাবে সাজানো এবং স্ট্যাক করা। ফিরে আসা সহজ - কোন বাধা নেই. সবশেষে, s - SEITON - আয়োজন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Seterusnya, mari kita fokus pada pengalaman anda dan protokol khusus yang diperlukan. Banyak carian, kelewatan perkara bercampur-campur item yang hilang dari rak. Tambahan pula, sediakan sistem storan/fail di mana perkara-perkara adalah:. Juga ambil perhatian bahawa mudah dilihat - label dan tanda yang betul. Mudah diambil – tersusun rapi & disusun. Mudah dipulangkan - tiada halangan. Akhir sekali, s - SEITON - Menganjur. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/8",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/8",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/8",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/8",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/8",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/8"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 9,
+          "slide_id": "slide_9",
+          "module_id": "module_02",
+          "title": "Floor is clean – litter, rubbish",
+          "key_points": [
+            "Storage areas – racks, cabinets, boxes",
+            "Equipment – PC, workstation",
+            "Documents – files, drawings, record books,",
+            "S - SEISO - Cleaning"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_9.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/9",
+          "explanations": {
+            "en": "In this section, floor is clean – litter, rubbish sets out clear operational expectations. Storage areas – racks, cabinets, boxes. Furthermore, equipment – PC, workstation. Also note that documents – files, drawings, record books,. Lastly, s - SEISO - Cleaning. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "在本节中，地板是干净的——垃圾，垃圾提出了明确的运营期望。存储区域——架子、柜子、盒子。此外，设备——个人电脑、工作站。另请注意文件——文件、图纸、记录簿等。最后，s - SEISO - 清洁。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ta": "இந்த பிரிவில், தரை சுத்தமாக உள்ளது - குப்பைகள், குப்பைகள் தெளிவான செயல்பாட்டு எதிர்பார்ப்புகளை அமைக்கிறது. சேமிப்பு பகுதிகள் - ரேக்குகள், பெட்டிகள், பெட்டிகள். மேலும், உபகரணங்கள் - பிசி, பணிநிலையம். ஆவணங்கள் - கோப்புகள், வரைபடங்கள், பதிவு புத்தகங்கள், என்பதை நினைவில் கொள்ளவும். கடைசியாக, s - SEISO - சுத்தம் செய்தல். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "bn": "এই বিভাগে, মেঝে পরিষ্কার - আবর্জনা, আবর্জনা পরিষ্কার পরিচালন প্রত্যাশা নির্ধারণ করে। স্টোরেজ এলাকা - র্যাক, ক্যাবিনেট, বাক্স। তদ্ব্যতীত, সরঞ্জাম - পিসি, ওয়ার্কস্টেশন। এছাড়াও নোট করুন যে নথি - ফাইল, অঙ্কন, রেকর্ড বই,. সবশেষে, s - SEISO - পরিষ্কার করা। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "ఈ విభాగంలో, నేల శుభ్రంగా ఉంటుంది - చెత్త, చెత్త స్పష్టమైన కార్యాచరణ అంచనాలను నిర్దేశిస్తుంది. నిల్వ ప్రాంతాలు - రాక్లు, క్యాబినెట్లు, పెట్టెలు. ఇంకా, పరికరాలు - PC, వర్క్‌స్టేషన్. పత్రాలు - ఫైల్‌లు, డ్రాయింగ్‌లు, రికార్డు పుస్తకాలు, అని కూడా గమనించండి. చివరగా, s - SEISO - క్లీనింగ్. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ms": "Dalam bahagian ini, lantai bersih – sampah, sampah menetapkan jangkaan operasi yang jelas. Kawasan penyimpanan – rak, kabinet, kotak. Tambahan pula, peralatan – PC, stesen kerja. Juga ambil perhatian bahawa dokumen – fail, lukisan, buku rekod,. Akhir sekali, s - SEISO - Pembersihan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/9",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/9",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/9",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/9",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/9",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/9"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 10,
+          "slide_id": "slide_10",
+          "module_id": "module_02",
+          "title": "Develop a routine and practice it until it becomes a habit",
+          "key_points": [
+            "cleaning schedule (eg. every day 15 min clean up (before start work)",
+            "S corner in bulletin boards targets are set in the Department",
+            "S - SEIKETSU - Maintaining"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_10.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/10",
+          "explanations": {
+            "en": "Looking now at develop a routine and practice it until it becomes a habit, compliance with these specific instructions is mandatory. Cleaning schedule (eg. every day 15 min clean up (before start work). Furthermore, s corner in bulletin boards targets are set in the Department. Also note that s - SEIKETSU - Maintaining. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "现在考虑制定一个例程并进行练习直到它成为一种习惯，遵守这些具体说明是强制性的。清洁时间表（例如，每天 15 分钟清洁（开始工作前）。此外，部门内设置了公告牌目标角。还要注意 s - SEIKETSU - 维护。在该区域开始工作之前，确保完全理解所有这些程序。",
+            "ta": "ஒரு வழக்கத்தை உருவாக்கி, அது ஒரு பழக்கமாக மாறும் வரை பயிற்சி செய்வதைப் பார்க்கும்போது, ​​இந்த குறிப்பிட்ட வழிமுறைகளுக்கு இணங்குவது கட்டாயமாகும். துப்புரவு அட்டவணை (எ.கா. ஒவ்வொரு நாளும் 15 நிமிடம் சுத்தம் செய்தல் (வேலையைத் தொடங்குவதற்கு முன்). மேலும், புல்லட்டின் பலகைகளில் கள் மூலையில் இலக்குகள் திணைக்களத்தில் அமைக்கப்பட்டுள்ளன. s - SEIKETSU - பராமரித்தல் என்பதையும் கவனத்தில் கொள்ளவும். இந்த மண்டலத்தில் வேலையைத் தொடங்கும் முன் இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "రొటీన్‌ని అభివృద్ధి చేయడం మరియు అది అలవాటు అయ్యే వరకు ఆచరించడం గురించి ఇప్పుడు చూస్తున్నప్పుడు, ఈ నిర్దిష్ట సూచనలను పాటించడం తప్పనిసరి. క్లీనింగ్ షెడ్యూల్ (ఉదా. ప్రతి రోజు 15 నిమిషాలు క్లీన్ అప్ (పని ప్రారంభించే ముందు). ఇంకా, బులెటిన్ బోర్డ్‌లలో s కార్నర్ టార్గెట్‌లు డిపార్ట్‌మెంట్‌లో సెట్ చేయబడ్డాయి. అలాగే s - SEIKETSU - మెయింటైనింగ్ అని గమనించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నాయని నిర్ధారించుకోండి.",
+            "bn": "এখন একটি রুটিন তৈরি করুন এবং এটি অভ্যাস না হওয়া পর্যন্ত অনুশীলন করুন, এই নির্দিষ্ট নির্দেশাবলী মেনে চলা বাধ্যতামূলক। পরিচ্ছন্নতার সময়সূচী (যেমন। প্রতিদিন 15 মিনিট পরিষ্কার করা (কাজ শুরু করার আগে)। উপরন্তু, বুলেটিন বোর্ডের কোণে টার্গেট ডিপার্টমেন্টে সেট করা আছে। এছাড়াও নোট করুন যে s - SEIKETSU - রক্ষণাবেক্ষণ। নিশ্চিত করুন যে এই জোনে কাজ শুরু করার আগে এই সমস্ত পদ্ধতি সম্পূর্ণরূপে বোঝা গেছে।",
+            "ms": "Melihat sekarang pada membangunkan rutin dan mengamalkannya sehingga ia menjadi kebiasaan, pematuhan dengan arahan khusus ini adalah wajib. Jadual pembersihan (cth. setiap hari 15 minit pembersihan (sebelum memulakan kerja). Tambahan pula, s sudut di papan kenyataan sasaran ditetapkan di Jabatan. Juga ambil perhatian bahawa s - SEIKETSU - Mengekalkan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/10",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/10",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/10",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/10",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/10",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/10"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    },
+    {
+      "module_id": "module_03",
+      "module_number": 3,
+      "title": "Module 3: Core Operational Concepts",
+      "description": "Covers operational standards for slides 11 to 15.",
+      "learning_objectives": [
+        "Understand procedures on slides 11 to 15"
+      ],
+      "slide_numbers": [
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "slides": [
+        {
+          "slide_number": 11,
+          "slide_id": "slide_11",
+          "module_id": "module_03",
+          "title": "Conforming to the 5S rules without being told",
+          "key_points": [
+            "Organizing own workstation daily",
+            "Cleaning workstation habitually",
+            "New files are being labelled",
+            "Being proactive when we see something not right"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_11.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/11",
+          "explanations": {
+            "en": "Conforming to the 5S rules without being told requires close attention to ensure safe and orderly operations. Organizing own workstation daily. Furthermore, cleaning workstation habitually. Also note that new files are being labelled. Being proactive when we see something not right. Lastly, s - SHITSUKE - Self-discipline. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "在无人告知的情况下遵守5S规则需要密切关注，以确保操作安全有序。每天整理自己的工作站。另外，要经常清洁工作站。另请注意，新文件已被标记。当我们发现不对劲的地方时，要积极主动。最后，s - SHITSUKE - 自律。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "te": "చెప్పకుండానే 5S నియమాలకు అనుగుణంగా సురక్షితమైన మరియు క్రమబద్ధమైన కార్యకలాపాలను నిర్ధారించడానికి చాలా శ్రద్ధ అవసరం. ప్రతిరోజూ సొంత వర్క్‌స్టేషన్‌ను నిర్వహించడం. ఇంకా, వర్క్‌స్టేషన్‌ను అలవాటుగా శుభ్రపరచడం. కొత్త ఫైల్‌లు లేబుల్ చేయబడుతున్నాయని కూడా గమనించండి. మనం ఏదైనా తప్పుగా చూసినప్పుడు చురుకుగా ఉండటం. చివరగా, s - SHITSUKE - స్వీయ-క్రమశిక్షణ. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ta": "சொல்லப்படாமலேயே 5S விதிகளுக்கு இணங்க, பாதுகாப்பான மற்றும் ஒழுங்கான செயல்பாடுகளை உறுதிசெய்ய அதிக கவனம் தேவை. தினசரி சொந்த பணிநிலையத்தை ஏற்பாடு செய்தல். மேலும், பணிநிலையத்தை வழக்கமாக சுத்தம் செய்தல். புதிய கோப்புகள் லேபிளிடப்படுகின்றன என்பதையும் கவனத்தில் கொள்ளவும். எதையாவது சரியில்லாததைக் காணும்போது செயலில் ஈடுபடுவது. கடைசியாக, s - SHITSUKE - சுய ஒழுக்கம். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "ms": "Mematuhi peraturan 5S tanpa diberitahu memerlukan perhatian yang teliti untuk memastikan operasi yang selamat dan teratur. Mengadakan stesen kerja sendiri setiap hari. Tambahan pula, membersihkan stesen kerja secara lazim. Juga ambil perhatian bahawa fail baharu sedang dilabelkan. Bersikap proaktif apabila kita melihat sesuatu yang tidak betul. Akhir sekali, s - SHITSUKE - Disiplin diri. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "bn": "না বলা 5S নিয়ম মেনে চলা নিরাপদ এবং সুশৃঙ্খল অপারেশন নিশ্চিত করার জন্য ঘনিষ্ঠ মনোযোগ প্রয়োজন। প্রতিদিন নিজস্ব ওয়ার্কস্টেশন সংগঠিত করা। উপরন্তু, অভ্যাসগতভাবে ওয়ার্কস্টেশন পরিষ্কার করা। এছাড়াও নোট করুন যে নতুন ফাইলগুলি লেবেল করা হচ্ছে। আমরা যখন কিছু ঠিক না দেখি তখন সক্রিয় হওয়া। সবশেষে, s - SHITSUKE - স্ব-শৃঙ্খলা। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷"
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/11",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/11",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/11",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/11",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/11",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/11"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 12,
+          "slide_id": "slide_12",
+          "module_id": "module_03",
+          "title": "Benefits of 5S",
+          "key_points": [
+            "Productivity",
+            "Eliminating",
+            "Waste"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_12.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/12",
+          "explanations": {
+            "en": "Next, let us focus on benefits of 5S and the specific protocols required. Productivity. Furthermore, eliminating. Also note that waste. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "接下来，让我们重点关注 5S 的好处以及所需的具体协议。生产率。此外，消除。还要注意浪费。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "এর পরে, আসুন আমরা 5S এর সুবিধা এবং প্রয়োজনীয় নির্দিষ্ট প্রোটোকলগুলির উপর ফোকাস করি। উৎপাদনশীলতা। উপরন্তু, নির্মূল. এছাড়াও যে অপচয় নোট. এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ta": "அடுத்து, 5S இன் நன்மைகள் மற்றும் தேவையான குறிப்பிட்ட நெறிமுறைகள் குறித்து கவனம் செலுத்துவோம். உற்பத்தித்திறன். மேலும், நீக்குதல். கழிவு என்பதையும் கவனத்தில் கொள்ளவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "తర్వాత, 5S యొక్క ప్రయోజనాలు మరియు అవసరమైన నిర్దిష్ట ప్రోటోకాల్‌లపై దృష్టి పెడదాం. ఉత్పాదకత. ఇంకా, తొలగించడం. వ్యర్థం అని కూడా గమనించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ms": "Seterusnya, mari kita fokus pada faedah 5S dan protokol khusus yang diperlukan. Produktiviti. Tambahan pula, menghapuskan. Juga ambil perhatian bahawa pembaziran. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/12",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/12",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/12",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/12",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/12",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/12"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 13,
+          "slide_id": "slide_13",
+          "module_id": "module_03",
+          "title": "Vision",
+          "key_points": [
+            "To create a 5S culture in our organization which we can call our workplace, our home.",
+            "Mission",
+            "To achieve a clean, neat and safe workplace by adopting 5S practices at all levels at all times.",
+            "Performance Measures"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_13.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/13",
+          "explanations": {
+            "en": "In this section, vision sets out clear operational expectations. To create a 5S culture in our organization which we can call our workplace, our home. Furthermore, mission. Also note that to achieve a clean, neat and safe workplace by adopting 5S practices at all levels at all times. Performance Measures. Measure 5S performance in each work area. Set up measurement and reward system to reward team. Carry out quarterly audit using checklist and score sheet. Create friendly competition with reward and recognition. Lastly, natSteel Goals. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "在本节中，愿景提出了明确的运营期望。在我们的组织中创建 5S 文化，我们可以将其称为我们的工作场所、我们的家。此外，还有使命。另请注意，始终在各个层面采用 5S 实践，以实现干净、整洁和安全的工作场所。绩效衡量标准。衡量每个工作区域的 5S 绩效。建立衡量和奖励制度来奖励团队。使用清单和评分表进行季度审核。通过奖励和认可创造友好的竞争。最后是 natSteel 的目标。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ta": "இந்த பிரிவில், பார்வை தெளிவான செயல்பாட்டு எதிர்பார்ப்புகளை அமைக்கிறது. எங்கள் நிறுவனத்தில் 5S கலாச்சாரத்தை உருவாக்க, அதை நாங்கள் எங்கள் பணியிடம், எங்கள் வீடு என்று அழைக்கலாம். மேலும், பணி. எல்லா நேரங்களிலும் அனைத்து நிலைகளிலும் 5S நடைமுறைகளைப் பின்பற்றுவதன் மூலம் ஒரு சுத்தமான, நேர்த்தியான மற்றும் பாதுகாப்பான பணியிடத்தை அடைவதையும் கவனத்தில் கொள்ளவும். செயல்திறன் நடவடிக்கைகள். ஒவ்வொரு பணிப் பகுதியிலும் 5S செயல்திறனை அளவிடவும். குழுவிற்கு வெகுமதி அளிக்க அளவீடு மற்றும் வெகுமதி அமைப்பை அமைக்கவும். சரிபார்ப்பு பட்டியல் மற்றும் மதிப்பெண் தாளைப் பயன்படுத்தி காலாண்டு தணிக்கையை மேற்கொள்ளுங்கள். வெகுமதி மற்றும் அங்கீகாரத்துடன் நட்பு போட்டியை உருவாக்கவும். கடைசியாக, நாட்ஸ்டீல் இலக்குகள். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "ఈ విభాగంలో, దృష్టి స్పష్టమైన కార్యాచరణ అంచనాలను నిర్దేశిస్తుంది. మా సంస్థలో 5S సంస్కృతిని సృష్టించడానికి, దానిని మనం మా కార్యాలయం, మన ఇల్లు అని పిలుస్తాము. ఇంకా, మిషన్. అన్ని సమయాలలో అన్ని స్థాయిలలో 5S పద్ధతులను అవలంబించడం ద్వారా శుభ్రమైన, చక్కగా మరియు సురక్షితమైన కార్యాలయాన్ని సాధించడం కూడా గమనించండి. పనితీరు చర్యలు. ప్రతి పని ప్రాంతంలో 5S పనితీరును కొలవండి. జట్టుకు రివార్డ్ చేయడానికి కొలత మరియు రివార్డ్ సిస్టమ్‌ను సెటప్ చేయండి. చెక్‌లిస్ట్ మరియు స్కోర్ షీట్ ఉపయోగించి త్రైమాసిక ఆడిట్ నిర్వహించండి. బహుమతి మరియు గుర్తింపుతో స్నేహపూర్వక పోటీని సృష్టించండి. చివరగా, నాట్‌స్టీల్ లక్ష్యాలు. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "bn": "এই বিভাগে, দৃষ্টি স্পষ্ট অপারেশনাল প্রত্যাশা নির্ধারণ করে। আমাদের প্রতিষ্ঠানে একটি 5S সংস্কৃতি তৈরি করা যাকে আমরা আমাদের কর্মক্ষেত্র, আমাদের বাড়ি বলতে পারি। উপরন্তু, মিশন. এছাড়াও মনে রাখবেন যে সব সময়ে সব স্তরে 5S অনুশীলনগুলি গ্রহণ করে একটি পরিষ্কার, ঝরঝরে এবং নিরাপদ কর্মক্ষেত্র অর্জন করতে। কর্মক্ষমতা পরিমাপ. প্রতিটি কাজের এলাকায় 5S কর্মক্ষমতা পরিমাপ করুন। দলকে পুরস্কৃত করার জন্য পরিমাপ এবং পুরষ্কার সিস্টেম সেট আপ করুন। চেকলিস্ট এবং স্কোর শীট ব্যবহার করে ত্রৈমাসিক অডিট পরিচালনা করুন। পুরষ্কার এবং স্বীকৃতির সাথে বন্ধুত্বপূর্ণ প্রতিযোগিতা তৈরি করুন। সবশেষে, ন্যাটস্টিল গোল। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Dalam bahagian ini, visi menetapkan jangkaan operasi yang jelas. Untuk mewujudkan budaya 5S dalam organisasi kita yang boleh kita panggil tempat kerja kita, rumah kita. Tambahan pula, misi. Juga ambil perhatian bahawa untuk mencapai tempat kerja yang bersih, kemas dan selamat dengan mengamalkan amalan 5S di semua peringkat pada setiap masa. Ukuran Prestasi. Ukur prestasi 5S di setiap kawasan kerja. Sediakan sistem pengukuran dan ganjaran untuk memberi ganjaran kepada pasukan. Menjalankan audit suku tahunan menggunakan senarai semak dan lembaran skor. Wujudkan persaingan mesra dengan ganjaran dan pengiktirafan. Akhir sekali, Matlamat natSteel. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/13",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/13",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/13",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/13",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/13",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/13"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 14,
+          "slide_id": "slide_14",
+          "module_id": "module_03",
+          "title": "Three Classes of workplace",
+          "key_points": [],
+          "table_summaries": [
+            "1st Class | 2nd Class | 3rd Class Nobody makes a mess or throws things around, yet everyone helps to keep the place clean. | Some people make a mess and throw things around, but there are office cleaners who tidy up the place | Everyone makes a mess, throws things around and nobody bothers to clean the place up"
+          ],
+          "image_descriptions": [
+            "assets/slide_14_img_4.jpg"
+          ],
+          "slide_image_path": "slides/slide_14.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/14",
+          "explanations": {
+            "en": "Turning to three Classes of workplace, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "对于三类工作场所，此处所示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "কর্মক্ষেত্রের তিনটি শ্রেণির দিকে ফিরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনন্দিন ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Beralih kepada tiga Kelas tempat kerja, kriteria berstruktur yang ditunjukkan di sini mewujudkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "பணியிடத்தின் மூன்று வகுப்புகளுக்குத் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "te": "కార్యాలయంలోని మూడు తరగతులకు మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/14",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/14",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/14",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/14",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/14",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/14"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 15,
+          "slide_id": "slide_15",
+          "module_id": "module_03",
+          "title": "If workplace is classified under either 2nd class or 3rd class – it is time to put 5S into action.",
+          "key_points": [
+            "On the other hand, even if your workplace has already achieved first-class status, you could still consider ways to further improve your work environment."
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_15_img_5.jpg"
+          ],
+          "slide_image_path": "slides/slide_15.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/15",
+          "explanations": {
+            "en": "If workplace is classified under either 2nd class or 3rd class – it is time to put 5S into action requires close attention to ensure safe and orderly operations. On the other hand, even if your workplace has already achieved first-class status, you could still consider ways to further improve your work environment.",
+            "zh-CN": "如果工作场所属于二级或三级，则需要采取 5S 行动，需要密切关注，以确保操作安全有序。另一方面，即使你的工作场所已经达到一流水平，你仍然可以考虑如何进一步改善你的工作环境。",
+            "te": "కార్యాలయాన్ని 2వ తరగతి లేదా 3వ తరగతి కింద వర్గీకరించినట్లయితే - సురక్షితమైన మరియు క్రమబద్ధమైన కార్యకలాపాలను నిర్ధారించడానికి 5Sని అమలులోకి తీసుకురావాల్సిన సమయం ఇది. మరోవైపు, మీ కార్యాలయం ఇప్పటికే ఫస్ట్-క్లాస్ స్థితిని సాధించినప్పటికీ, మీరు మీ పని వాతావరణాన్ని మరింత మెరుగుపరచడానికి మార్గాలను పరిగణించవచ్చు.",
+            "bn": "যদি কর্মক্ষেত্রটি 2য় বা 3য় শ্রেণীতে শ্রেণীবদ্ধ করা হয় - তাহলে 5S কার্যকর করার সময় এসেছে নিরাপদ এবং সুশৃঙ্খল ক্রিয়াকলাপগুলি নিশ্চিত করার জন্য গভীর মনোযোগের প্রয়োজন৷ অন্যদিকে, এমনকি যদি আপনার কর্মক্ষেত্র ইতিমধ্যেই প্রথম-শ্রেণীর মর্যাদা অর্জন করে থাকে, তবুও আপনি আপনার কাজের পরিবেশকে আরও উন্নত করার উপায়গুলি বিবেচনা করতে পারেন।",
+            "ta": "பணியிடமானது 2ஆம் வகுப்பு அல்லது 3ஆம் வகுப்பின் கீழ் வகைப்படுத்தப்பட்டிருந்தால் - பாதுகாப்பான மற்றும் ஒழுங்கான செயல்பாடுகளை உறுதிசெய்ய, 5S-ஐச் செயல்படுத்துவதற்கான நேரம் இது. மறுபுறம், உங்கள் பணியிடம் ஏற்கனவே முதல் தர நிலையை அடைந்திருந்தாலும், உங்கள் பணிச்சூழலை மேலும் மேம்படுத்துவதற்கான வழிகளை நீங்கள் பரிசீலிக்கலாம்.",
+            "ms": "Jika tempat kerja dikelaskan sama ada di bawah kelas ke-2 atau kelas ke-3 – sudah tiba masanya untuk melaksanakan 5S memerlukan perhatian yang teliti untuk memastikan operasi yang selamat dan teratur. Sebaliknya, walaupun tempat kerja anda telah mencapai status kelas pertama, anda masih boleh mempertimbangkan cara untuk menambah baik lagi persekitaran kerja anda."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/15",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/15",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/15",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/15",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/15",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/15"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    },
+    {
+      "module_id": "module_04",
+      "module_number": 4,
+      "title": "Module 4: Core Operational Concepts",
+      "description": "Covers operational standards for slides 16 to 20.",
+      "learning_objectives": [
+        "Understand procedures on slides 16 to 20"
+      ],
+      "slide_numbers": [
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "slides": [
+        {
+          "slide_number": 16,
+          "slide_id": "slide_16",
+          "module_id": "module_04",
+          "title": "A first-class workplace could be achieved …… If all employees are involved and everyone strives towards a clean, organized workplace.",
+          "key_points": [],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_16_img_6.jpg"
+          ],
+          "slide_image_path": "slides/slide_16.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/16",
+          "explanations": {
+            "en": "Next, let us focus on a first-class workplace could be achieved …… If all employees are involved and everyone strives towards a clean, organized workplace and the specific protocols required.",
+            "ta": "அடுத்து, முதல்தர பணியிடத்தில் கவனம் செலுத்துவோம் ...... அனைத்து ஊழியர்களும் ஈடுபட்டு, தூய்மையான, ஒழுங்கமைக்கப்பட்ட பணியிடம் மற்றும் தேவையான குறிப்பிட்ட நெறிமுறைகளை நோக்கி அனைவரும் பாடுபட்டால் அடைய முடியும்.",
+            "bn": "এর পরে, আসুন আমরা একটি প্রথম-শ্রেণীর কর্মক্ষেত্রে ফোকাস করি যা অর্জন করা যেতে পারে …… যদি সমস্ত কর্মচারী জড়িত থাকে এবং প্রত্যেকে একটি পরিষ্কার, সংগঠিত কর্মক্ষেত্র এবং প্রয়োজনীয় নির্দিষ্ট প্রোটোকলের দিকে প্রচেষ্টা চালায়।",
+            "te": "తరువాత, మనం ఫస్ట్-క్లాస్ వర్క్‌ప్లేస్‌పై దృష్టి పెడతాము …… ఉద్యోగులందరూ పాల్గొంటే మరియు ప్రతి ఒక్కరూ స్వచ్ఛమైన, వ్యవస్థీకృత కార్యాలయం మరియు అవసరమైన నిర్దిష్ట ప్రోటోకాల్‌ల వైపు ప్రయత్నిస్తే.",
+            "zh-CN": "接下来，让我们关注可以实现的一流工作场所……如果所有员工都参与其中，每个人都努力实现一个干净、有组织的工作场所以及所需的具体协议。",
+            "ms": "Seterusnya, marilah kita memberi tumpuan kepada tempat kerja kelas pertama boleh dicapai …… Jika semua pekerja terlibat dan semua orang berusaha ke arah tempat kerja yang bersih, teratur dan protokol khusus yang diperlukan."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/16",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/16",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/16",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/16",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/16",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/16"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 17,
+          "slide_id": "slide_17",
+          "module_id": "module_04",
+          "title": "Production Scoring Sheet",
+          "key_points": [],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_17_img_7.png"
+          ],
+          "slide_image_path": "slides/slide_17.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/17",
+          "explanations": {
+            "en": "In this section, production Scoring Sheet sets out clear operational expectations.",
+            "zh-CN": "在本节中，生产评分表列出了明确的运营预期。",
+            "bn": "এই বিভাগে, প্রোডাকশন স্কোরিং শীট স্পষ্ট অপারেশনাল প্রত্যাশা নির্ধারণ করে।",
+            "ta": "இந்த பிரிவில், உற்பத்தி மதிப்பெண் தாள் தெளிவான செயல்பாட்டு எதிர்பார்ப்புகளை அமைக்கிறது.",
+            "te": "ఈ విభాగంలో, ప్రొడక్షన్ స్కోరింగ్ షీట్ స్పష్టమైన కార్యాచరణ అంచనాలను నిర్దేశిస్తుంది.",
+            "ms": "Dalam bahagian ini, Lembaran Pemarkahan pengeluaran menetapkan jangkaan operasi yang jelas."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/17",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/17",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/17",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/17",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/17",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/17"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 18,
+          "slide_id": "slide_18",
+          "module_id": "module_04",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_18_img_8.png",
+            "assets/slide_18_img_9.png"
+          ],
+          "slide_image_path": "slides/slide_18.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/18",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/18",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/18",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/18",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/18",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/18",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/18"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 19,
+          "slide_id": "slide_19",
+          "module_id": "module_04",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_19_img_10.png",
+            "assets/slide_19_img_11.png"
+          ],
+          "slide_image_path": "slides/slide_19.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/19",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/19",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/19",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/19",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/19",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/19",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/19"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 20,
+          "slide_id": "slide_20",
+          "module_id": "module_04",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_20_img_14.png",
+            "assets/slide_20_img_15.png"
+          ],
+          "slide_image_path": "slides/slide_20.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/20",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/20",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/20",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/20",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/20",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/20",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/20"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    },
+    {
+      "module_id": "module_05",
+      "module_number": 5,
+      "title": "Module 5: Core Operational Concepts",
+      "description": "Covers operational standards for slides 21 to 25.",
+      "learning_objectives": [
+        "Understand procedures on slides 21 to 25"
+      ],
+      "slide_numbers": [
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "slides": [
+        {
+          "slide_number": 21,
+          "slide_id": "slide_21",
+          "module_id": "module_05",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_21_img_17.png",
+            "assets/slide_21_img_18.png"
+          ],
+          "slide_image_path": "slides/slide_21.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/21",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/21",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/21",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/21",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/21",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/21",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/21"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 22,
+          "slide_id": "slide_22",
+          "module_id": "module_05",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_22_img_20.png",
+            "assets/slide_22_img_21.png"
+          ],
+          "slide_image_path": "slides/slide_22.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/22",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/22",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/22",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/22",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/22",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/22",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/22"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 23,
+          "slide_id": "slide_23",
+          "module_id": "module_05",
+          "title": "5S Workstation Scoring",
+          "key_points": [],
+          "table_summaries": [
+            "Rating (pt) | 0 | 1 | 2 | 3 | 4 | 5"
+          ],
+          "image_descriptions": [
+            "assets/slide_23_img_23.png",
+            "assets/slide_23_img_24.png"
+          ],
+          "slide_image_path": "slides/slide_23.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/23",
+          "explanations": {
+            "en": "Turning to 5S Workstation Scoring, the structured criteria shown here establish mandatory controls that apply to daily activities. Review each entry in the table carefully to confirm the required actions and corresponding conditions. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ms": "Beralih kepada Pemarkahan Stesen Kerja 5S, kriteria berstruktur yang ditunjukkan di sini menetapkan kawalan mandatori yang digunakan untuk aktiviti harian. Semak setiap entri dalam jadual dengan teliti untuk mengesahkan tindakan yang diperlukan dan syarat yang sepadan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini.",
+            "ta": "5S பணிநிலைய ஸ்கோரிங் பக்கம் திரும்பினால், இங்குக் காட்டப்பட்டுள்ள கட்டமைக்கப்பட்ட அளவுகோல்கள் தினசரி நடவடிக்கைகளுக்குப் பொருந்தும் கட்டாயக் கட்டுப்பாடுகளை நிறுவுகின்றன. தேவையான செயல்கள் மற்றும் தொடர்புடைய நிபந்தனைகளை உறுதிப்படுத்த அட்டவணையில் உள்ள ஒவ்வொரு உள்ளீட்டையும் கவனமாக மதிப்பாய்வு செய்யவும். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "谈到 5S 工作站评分，此处显示的结构化标准建立了适用于日常活动的强制性控制措施。仔细检查表中的每个条目以确认所需的操作和相应的条件。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "5S ওয়ার্কস্টেশন স্কোরিংয়ের দিকে ঘুরে, এখানে দেখানো কাঠামোগত মানদণ্ডগুলি বাধ্যতামূলক নিয়ন্ত্রণগুলি স্থাপন করে যা দৈনিক ক্রিয়াকলাপগুলিতে প্রযোজ্য। প্রয়োজনীয় ক্রিয়া এবং সংশ্লিষ্ট শর্তগুলি নিশ্চিত করতে টেবিলের প্রতিটি এন্ট্রি সাবধানে পর্যালোচনা করুন। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "te": "5S వర్క్‌స్టేషన్ స్కోరింగ్‌కి మారడం, ఇక్కడ చూపిన నిర్మాణాత్మక ప్రమాణాలు రోజువారీ కార్యకలాపాలకు వర్తించే తప్పనిసరి నియంత్రణలను ఏర్పాటు చేస్తాయి. అవసరమైన చర్యలు మరియు సంబంధిత షరతులను నిర్ధారించడానికి పట్టికలోని ప్రతి ఎంట్రీని జాగ్రత్తగా సమీక్షించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/23",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/23",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/23",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/23",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/23",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/23"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 24,
+          "slide_id": "slide_24",
+          "module_id": "module_05",
+          "title": "Slide 24",
+          "key_points": [
+            "How much score do you give?"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_24_img_26.jpg",
+            "assets/slide_24_img_27.png"
+          ],
+          "slide_image_path": "slides/slide_24.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/24",
+          "explanations": {
+            "en": "The following operational standards are essential for safety and must be followed carefully. How much score do you give?.",
+            "ms": "Piawaian operasi berikut adalah penting untuk keselamatan dan mesti dipatuhi dengan teliti. Berapa markah yang anda berikan?.",
+            "zh-CN": "以下操作标准对于安全至关重要，必须认真遵守。你给多少分？",
+            "ta": "பின்வரும் செயல்பாட்டு தரநிலைகள் பாதுகாப்பிற்கு அவசியமானவை மற்றும் கவனமாக பின்பற்றப்பட வேண்டும். எவ்வளவு மதிப்பெண் தருகிறீர்கள்?.",
+            "bn": "নিম্নলিখিত কর্মক্ষম মান নিরাপত্তার জন্য অপরিহার্য এবং সাবধানে অনুসরণ করা আবশ্যক। আপনি কত স্কোর দেন?",
+            "te": "కింది కార్యాచరణ ప్రమాణాలు భద్రతకు అవసరం మరియు జాగ్రత్తగా అనుసరించాలి. మీరు ఎంత స్కోరు ఇస్తారు?."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/24",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/24",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/24",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/24",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/24",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/24"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 25,
+          "slide_id": "slide_25",
+          "module_id": "module_05",
+          "title": "Slide 25",
+          "key_points": [
+            "How much score do you give?"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_25_img_29.png",
+            "assets/slide_25_img_30.jpg"
+          ],
+          "slide_image_path": "slides/slide_25.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/25",
+          "explanations": {
+            "en": "The following operational standards are essential for safety and must be followed carefully. How much score do you give?.",
+            "ta": "பின்வரும் செயல்பாட்டு தரநிலைகள் பாதுகாப்பிற்கு அவசியமானவை மற்றும் கவனமாக பின்பற்றப்பட வேண்டும். எவ்வளவு மதிப்பெண் தருகிறீர்கள்?.",
+            "zh-CN": "以下操作标准对于安全至关重要，必须认真遵守。你给多少分？",
+            "ms": "Piawaian operasi berikut adalah penting untuk keselamatan dan mesti dipatuhi dengan teliti. Berapa markah yang anda berikan?.",
+            "bn": "নিম্নলিখিত কর্মক্ষম মান নিরাপত্তার জন্য অপরিহার্য এবং সাবধানে অনুসরণ করা আবশ্যক। আপনি কত স্কোর দেন?",
+            "te": "కింది కార్యాచరణ ప్రమాణాలు భద్రతకు అవసరం మరియు జాగ్రత్తగా అనుసరించాలి. మీరు ఎంత స్కోరు ఇస్తారు?."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/25",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/25",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/25",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/25",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/25",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/25"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    },
+    {
+      "module_id": "module_06",
+      "module_number": 6,
+      "title": "Module 6: Core Operational Concepts",
+      "description": "Covers operational standards for slides 26 to 30.",
+      "learning_objectives": [
+        "Understand procedures on slides 26 to 30"
+      ],
+      "slide_numbers": [
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "slides": [
+        {
+          "slide_number": 26,
+          "slide_id": "slide_26",
+          "module_id": "module_06",
+          "title": "Slide 26",
+          "key_points": [
+            "How much score do you give?"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_26_img_33.jpg",
+            "assets/slide_26_img_34.png"
+          ],
+          "slide_image_path": "slides/slide_26.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/26",
+          "explanations": {
+            "en": "The following operational standards are essential for safety and must be followed carefully. How much score do you give?.",
+            "ms": "Piawaian operasi berikut adalah penting untuk keselamatan dan mesti dipatuhi dengan teliti. Berapa markah yang anda berikan?.",
+            "ta": "பின்வரும் செயல்பாட்டு தரநிலைகள் பாதுகாப்பிற்கு அவசியமானவை மற்றும் கவனமாக பின்பற்றப்பட வேண்டும். எவ்வளவு மதிப்பெண் தருகிறீர்கள்?.",
+            "zh-CN": "以下操作标准对于安全至关重要，必须认真遵守。你给多少分？",
+            "bn": "নিম্নলিখিত কর্মক্ষম মান নিরাপত্তার জন্য অপরিহার্য এবং সাবধানে অনুসরণ করা আবশ্যক। আপনি কত স্কোর দেন?",
+            "te": "కింది కార్యాచరణ ప్రమాణాలు భద్రతకు అవసరం మరియు జాగ్రత్తగా అనుసరించాలి. మీరు ఎంత స్కోరు ఇస్తారు?."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/26",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/26",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/26",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/26",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/26",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/26"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 27,
+          "slide_id": "slide_27",
+          "module_id": "module_06",
+          "title": "Slide 27",
+          "key_points": [
+            "How much score do you give?"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_27_img_36.jpg",
+            "assets/slide_27_img_37.jpg"
+          ],
+          "slide_image_path": "slides/slide_27.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/27",
+          "explanations": {
+            "en": "The following operational standards are essential for safety and must be followed carefully. How much score do you give?.",
+            "ta": "பின்வரும் செயல்பாட்டு தரநிலைகள் பாதுகாப்பிற்கு அவசியமானவை மற்றும் கவனமாக பின்பற்றப்பட வேண்டும். எவ்வளவு மதிப்பெண் தருகிறீர்கள்?.",
+            "zh-CN": "以下操作标准对于安全至关重要，必须认真遵守。你给多少分？",
+            "ms": "Piawaian operasi berikut adalah penting untuk keselamatan dan mesti dipatuhi dengan teliti. Berapa markah yang anda berikan?.",
+            "bn": "নিম্নলিখিত কর্মক্ষম মান নিরাপত্তার জন্য অপরিহার্য এবং সাবধানে অনুসরণ করা আবশ্যক। আপনি কত স্কোর দেন?",
+            "te": "కింది కార్యాచరణ ప్రమాణాలు భద్రతకు అవసరం మరియు జాగ్రత్తగా అనుసరించాలి. మీరు ఎంత స్కోరు ఇస్తారు?."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/27",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/27",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/27",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/27",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/27",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/27"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 28,
+          "slide_id": "slide_28",
+          "module_id": "module_06",
+          "title": "To ensure everyone involve in daily housekeeping",
+          "key_points": [
+            "To achieve clean, neat and tidy workplace everyday",
+            "To take photo on current status, IC’s will then take action on closure (stetting up standard)",
+            "Hall IC’s to set standard for halls and submit own areas report",
+            "Conduct weekly/monthly audit including surprise audit"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [],
+          "slide_image_path": "slides/slide_28.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/28",
+          "explanations": {
+            "en": "Next, let us focus on to ensure everyone involve in daily housekeeping and the specific protocols required. To achieve clean, neat and tidy workplace everyday. Furthermore, to take photo on current status, IC’s will then take action on closure (stetting up standard). Also note that hall IC’s to set standard for halls and submit own areas report. Conduct weekly/monthly audit including surprise audit. Submit audit results to see your actual scoring. Lastly, s Team Leader Assignment. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "ta": "அடுத்து, தினசரி வீட்டு பராமரிப்பு மற்றும் தேவையான குறிப்பிட்ட நெறிமுறைகளில் அனைவரும் ஈடுபடுவதை உறுதிசெய்வதில் கவனம் செலுத்துவோம். ஒவ்வொரு நாளும் சுத்தமான, நேர்த்தியான மற்றும் நேர்த்தியான பணியிடத்தை அடைய. மேலும், தற்போதைய நிலையில் புகைப்படம் எடுக்க, IC கள் மூடுவதற்கு நடவடிக்கை எடுக்கும் (தரநிலையை அமைத்தல்). ஹால் ஐசிகள் ஹால்களுக்கான தரநிலையை நிர்ணயித்து சொந்தப் பகுதி அறிக்கையைச் சமர்ப்பிக்க வேண்டும் என்பதையும் கவனத்தில் கொள்ளவும். திடீர் தணிக்கை உட்பட வாராந்திர/மாதாந்திர தணிக்கையை நடத்தவும். உங்கள் உண்மையான மதிப்பெண்ணைக் காண தணிக்கை முடிவுகளைச் சமர்ப்பிக்கவும். கடைசியாக, கள் டீம் லீடர் பணி. இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "接下来，让我们重点关注确保每个人都参与日常内务管理以及所需的具体协议。实现每天干净、整洁、整洁的工作场所。此外，为了拍摄当前状态，IC 将采取关闭行动（制定标准）。另请注意，大厅 IC 负责制定大厅标准并提交自己的区域报告。进行每周/每月审核，包括突击审核。提交审核结果以查看您的实际得分。最后，团队领导分配。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "te": "తర్వాత, ప్రతి ఒక్కరూ రోజువారీ హౌస్ కీపింగ్‌లో పాల్గొంటారని మరియు అవసరమైన నిర్దిష్ట ప్రోటోకాల్‌లను నిర్ధారించడంపై దృష్టి పెడతాము. ప్రతిరోజూ శుభ్రమైన, చక్కగా మరియు చక్కనైన కార్యాలయాన్ని సాధించడానికి. ఇంకా, ప్రస్తుత స్థితిపై ఫోటో తీయడానికి, ICలు మూసివేతపై చర్య తీసుకుంటాయి (ప్రామాణికతను పెంచడం). హాల్ IC లు హాళ్లకు ప్రమాణాన్ని సెట్ చేసి స్వంత ప్రాంతాల నివేదికను సమర్పించాలని కూడా గమనించండి. ఆశ్చర్యకరమైన ఆడిట్‌తో సహా వారంవారీ/నెలవారీ ఆడిట్ నిర్వహించండి. మీ వాస్తవ స్కోరింగ్‌ను చూడటానికి ఆడిట్ ఫలితాలను సమర్పించండి. చివరగా, టీమ్ లీడర్ అసైన్‌మెంట్. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "bn": "এরপরে, প্রতিদিনের গৃহস্থালির কাজে এবং প্রয়োজনীয় নির্দিষ্ট প্রোটোকলগুলিতে প্রত্যেকের জড়িত থাকার বিষয়টি নিশ্চিত করার জন্য আমাদের ফোকাস করা যাক। প্রতিদিন পরিষ্কার, পরিপাটি এবং পরিপাটি কর্মক্ষেত্র অর্জন করতে। তদ্ব্যতীত, বর্তমান অবস্থার উপর ছবি তোলার জন্য, IC এর পরে ক্লোজার (স্ট্যান্ড আপ স্ট্যান্ডার্ড) ব্যবস্থা নেবে। এছাড়াও নোট করুন যে হল আইসি হলগুলির জন্য মান নির্ধারণ করবে এবং নিজস্ব এলাকা রিপোর্ট জমা দেবে। সারপ্রাইজ অডিট সহ সাপ্তাহিক/মাসিক অডিট পরিচালনা করুন। আপনার প্রকৃত স্কোরিং দেখতে অডিট ফলাফল জমা দিন। সবশেষে, টিম লিডার অ্যাসাইনমেন্ট। এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Seterusnya, mari kita fokus untuk memastikan semua orang terlibat dalam pengemasan harian dan protokol khusus yang diperlukan. Untuk mencapai tempat kerja yang bersih, kemas dan kemas setiap hari. Tambahan pula, untuk mengambil gambar pada status semasa, IC kemudiannya akan mengambil tindakan terhadap penutupan (meningkatkan standard). Juga ambil perhatian bahawa IC dewan untuk menetapkan standard untuk dewan dan menyerahkan laporan kawasan sendiri. Menjalankan audit mingguan/bulanan termasuk audit mengejut. Serahkan keputusan audit untuk melihat pemarkahan sebenar anda. Akhir sekali, Tugasan Ketua Pasukan. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/28",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/28",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/28",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/28",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/28",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/28"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 29,
+          "slide_id": "slide_29",
+          "module_id": "module_06",
+          "title": "5S IS NO EASY",
+          "key_points": [
+            "“The 5S’s are not that difficult to understand. However, they are very difficult to do well. They require diligence and determination. They require constant effort and require the ability to see what is important and to pay attention to details.",
+            "They may not show dramatic results, but they do show results.”",
+            "CONCLUSION"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_29_img_40.jpg"
+          ],
+          "slide_image_path": "slides/slide_29.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/29",
+          "explanations": {
+            "en": "In this section, 5S IS NO EASY sets out clear operational expectations. “The 5S’s are not that difficult to understand. However, they are very difficult to do well. They require diligence and determination. They require constant effort and require the ability to see what is important and to pay attention to details. Furthermore, they may not show dramatic results, but they do show results.”. Also note that cONCLUSION. Ensure all of these procedures are fully understood before starting work in this zone.",
+            "te": "ఈ విభాగంలో, 5S సులువు కాదు స్పష్టమైన కార్యాచరణ అంచనాలను నిర్దేశిస్తుంది. \"5Sలు అర్థం చేసుకోవడం అంత కష్టం కాదు. అయినప్పటికీ, అవి బాగా చేయడం చాలా కష్టం. వాటికి శ్రద్ధ మరియు దృఢసంకల్పం అవసరం. వాటికి నిరంతరం కృషి అవసరం మరియు ముఖ్యమైన వాటిని చూసే మరియు వివరాలపై శ్రద్ధ వహించే సామర్థ్యం అవసరం. ఇంకా, అవి నాటకీయ ఫలితాలను చూపించకపోవచ్చు, కానీ అవి ఫలితాలను చూపుతాయి.\" ముగింపు అని కూడా గమనించండి. ఈ జోన్‌లో పనిని ప్రారంభించే ముందు ఈ విధానాలన్నీ పూర్తిగా అర్థం చేసుకున్నట్లు నిర్ధారించుకోండి.",
+            "ta": "இந்த பிரிவில், 5S எளிதானது அல்ல தெளிவான செயல்பாட்டு எதிர்பார்ப்புகளை அமைக்கிறது. \"5S'களை புரிந்துகொள்வது அவ்வளவு கடினம் அல்ல. இருப்பினும், அவை சிறப்பாகச் செய்வது மிகவும் கடினம். விடாமுயற்சியும் உறுதியும் தேவை. அவற்றுக்கு நிலையான முயற்சி தேவை மற்றும் முக்கியமானவற்றைப் பார்க்கும் திறன் மற்றும் விவரங்களுக்கு கவனம் செலுத்தும் திறன் தேவை. மேலும், அவை வியத்தகு முடிவுகளைக் காட்டாது, ஆனால் அவை முடிவுகளைக் காட்டுகின்றன.\" முடிவுரையும் கவனியுங்கள். இந்த மண்டலத்தில் வேலையைத் தொடங்குவதற்கு முன், இந்த நடைமுறைகள் அனைத்தும் முழுமையாகப் புரிந்து கொள்ளப்பட்டுள்ளதா என்பதை உறுதிப்படுத்தவும்.",
+            "zh-CN": "在本节中，5S 并不容易，提出了明确的运营期望。 “5S并不难理解，但做好却很难。它需要勤奋和决心。需要不断的努力，需要能够看到重要的事情并注重细节。此外，它们可能不会表现出戏剧性的结果，但它们确实会表现出结果。”还要注意结论。在开始在此区域工作之前，确保完全理解所有这些程序。",
+            "bn": "এই বিভাগে, 5S কোন সহজ নয় স্পষ্ট অপারেশনাল প্রত্যাশা নির্ধারণ করে। \"5S-গুলি বোঝা এতটা কঠিন নয়৷ তবে, এগুলি ভাল করা খুব কঠিন৷ তাদের জন্য অধ্যবসায় এবং সংকল্পের প্রয়োজন৷ তাদের জন্য নিরন্তর প্রচেষ্টার প্রয়োজন এবং কী গুরুত্বপূর্ণ তা দেখার এবং বিশদগুলিতে মনোযোগ দেওয়ার ক্ষমতা প্রয়োজন৷ উপরন্তু, তারা নাটকীয় ফলাফল নাও দেখাতে পারে, তবে তারা ফলাফল দেখায়।\" এছাড়াও যে উপসংহার নোট. এই অঞ্চলে কাজ শুরু করার আগে এই সমস্ত পদ্ধতিগুলি সম্পূর্ণরূপে বোঝা হয়েছে তা নিশ্চিত করুন৷",
+            "ms": "Dalam bahagian ini, 5S TIDAK MUDAH menetapkan jangkaan operasi yang jelas. \"5S tidak begitu sukar untuk difahami. Walau bagaimanapun, ia sangat sukar untuk dilakukan dengan baik. Mereka memerlukan ketekunan dan keazaman. Mereka memerlukan usaha berterusan dan memerlukan keupayaan untuk melihat perkara yang penting dan memberi perhatian kepada perincian. Tambahan pula, mereka mungkin tidak menunjukkan hasil yang dramatik, tetapi ia menunjukkan hasil.\" Perhatikan juga bahawa KESIMPULAN. Pastikan semua prosedur ini difahami sepenuhnya sebelum memulakan kerja di zon ini."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/29",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/29",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/29",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/29",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/29",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/29"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        },
+        {
+          "slide_number": 30,
+          "slide_id": "slide_30",
+          "module_id": "module_06",
+          "title": "THANK YOU",
+          "key_points": [
+            "THE END"
+          ],
+          "table_summaries": [],
+          "image_descriptions": [
+            "assets/slide_30_img_41.png"
+          ],
+          "slide_image_path": "slides/slide_30.png",
+          "slide_image_url": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/slides/30",
+          "explanations": {
+            "en": "To conclude our session, let us review the key responsibilities regarding tHANK YOU. Every person on site is expected to uphold these standards consistently. THE END. Please review these procedures carefully and report any safety concerns immediately.",
+            "zh-CN": "在结束我们的会议时，让我们回顾一下有关“谢谢”的主要职责。现场的每个人都应始终坚持这些标准。结束。请仔细审查这些程序并立即报告任何安全问题。",
+            "te": "మా సెషన్‌ను ముగించడానికి, ధన్యవాదాలు తెలిపే కీలక బాధ్యతలను సమీక్షిద్దాం. సైట్‌లోని ప్రతి వ్యక్తి ఈ ప్రమాణాలను స్థిరంగా కొనసాగించాలని భావిస్తున్నారు. ముగింపు. దయచేసి ఈ విధానాలను జాగ్రత్తగా సమీక్షించండి మరియు ఏవైనా భద్రతా సమస్యలను వెంటనే నివేదించండి.",
+            "ta": "எங்கள் அமர்வை முடிக்க, நன்றி தொடர்பான முக்கிய பொறுப்புகளை மதிப்பாய்வு செய்வோம். தளத்தில் உள்ள ஒவ்வொரு நபரும் இந்த தரநிலைகளை தொடர்ந்து நிலைநிறுத்த வேண்டும் என்று எதிர்பார்க்கப்படுகிறது. முடிவு. இந்த நடைமுறைகளை கவனமாக மதிப்பாய்வு செய்து, ஏதேனும் பாதுகாப்புக் கவலைகள் இருந்தால் உடனடியாகப் புகாரளிக்கவும்.",
+            "bn": "আমাদের অধিবেশন শেষ করতে, আসুন ধন্যবাদ সম্পর্কিত মূল দায়িত্বগুলি পর্যালোচনা করি। সাইটের প্রত্যেক ব্যক্তি এই মানগুলি ধারাবাহিকভাবে বজায় রাখবে বলে আশা করা হচ্ছে। শেষ। অনুগ্রহ করে এই পদ্ধতিগুলি সাবধানতার সাথে পর্যালোচনা করুন এবং অবিলম্বে কোনো নিরাপত্তা উদ্বেগ প্রতিবেদন করুন।",
+            "ms": "Untuk mengakhiri sesi kami, marilah kami mengkaji semula tanggungjawab utama berkenaan dengan TERIMA KASIH. Setiap orang di tapak dijangka mematuhi piawaian ini secara konsisten. AKHIRNYA. Sila semak prosedur ini dengan teliti dan laporkan sebarang kebimbangan keselamatan dengan segera."
+          },
+          "durations_seconds": {},
+          "audio_files": {},
+          "audio_urls": {
+            "en": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/en/30",
+            "zh-CN": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/zh-CN/30",
+            "ms": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ms/30",
+            "ta": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/ta/30",
+            "bn": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/bn/30",
+            "te": "/v1/courses/067fca45-a90e-444a-8c84-57d45106b3c3/audio/te/30"
+          },
+          "module_start_seconds": {},
+          "module_end_seconds": {},
+          "course_start_seconds": {},
+          "course_end_seconds": {}
+        }
+      ],
+      "durations_seconds": {},
+      "module_ready": {},
+      "video_files": {}
+    }
+  ],
+  "glossary": {
+    "Good Housekeeping": {
+      "en": "Good Housekeeping",
+      "zh-CN": "良好内务整理",
+      "ms": "Pengemasan Baik",
+      "ta": "சரியான பணியிடப் பராமரிப்பு",
+      "bn": "উন্নত কর্মক্ষেত্র ব্যবস্থাপনা",
+      "te": "మంచి కార్యాలయ నిర్వహణ"
+    }
+  },
+  "languages_ready": {},
+  "course_video_files": {},
+  "validation_report": {
+    "valid": true,
+    "slides_checked": 30,
+    "slides_requiring_revision": 0,
+    "revisions_count": 0,
+    "revisions": [],
+    "issues_detected": [
+      "Slide 3 low depth (13 words).",
+      "Slide 17 low depth (11 words)."
+    ],
+    "duration_seconds": 0.035,
+    "languages_checked": [
+      "en",
+      "zh-CN",
+      "ms",
+      "ta",
+      "bn",
+      "te"
+    ],
+    "alloc_validation": {
+      "valid": true,
+      "total_presentation_slides": 30,
+      "total_allocated_slides": 30,
+      "module_count": 6,
+      "missing_slides": [],
+      "extra_slides": [],
+      "overlaps": [],
+      "message": "Slide allocation verified: 100% complete, strictly unique, and disjoint."
+    }
+  },
+  "performance_metrics": {}
+}

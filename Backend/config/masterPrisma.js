@@ -53,4 +53,6 @@ const masterPrisma = new PrismaClient({
   }
 });
 
+export const masterPrismaClient = masterPrisma;
+export { masterPrisma };
 export default masterPrisma;

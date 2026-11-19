@@ -1106,9 +1106,27 @@ const UsersList = () => {
                   </div>
                   <input
                     type="tel"
+                    inputMode="tel"
+                    pattern="[0-9+ -]*"
                     name="edit_user_phone"
                     value={editForm.phone || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (
+                        !/[0-9+ -]/.test(e.key) &&
+                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key) &&
+                        !e.ctrlKey &&
+                        !e.metaKey
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      let cleaned = e.target.value.replace(/[^\d+ -]/g, '');
+                      if (cleaned.includes('+')) {
+                        cleaned = (cleaned.startsWith('+') ? '+' : '') + cleaned.replace(/\+/g, '');
+                      }
+                      setEditForm(prev => ({ ...prev, phone: cleaned }));
+                    }}
                     placeholder={editForm.country ? `e.g. ${getCountryDialCode(editForm.country)} 9123 4567` : 'e.g. +65 9123 4567'}
                     className="w-full rounded-xl border border-line bg-ink/50 px-4 py-3 text-[0.95rem] text-fg outline-none transition placeholder:text-muted/60 hover:border-sky/40 focus:border-sky"
                   />

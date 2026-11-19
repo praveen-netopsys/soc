@@ -51,6 +51,8 @@ const mapRagCourse = (dbCourse) => {
 
   const fileType = curriculumData.fileType || dbCourse.fileType || (dbCourse.fileName?.split('.').pop()?.toLowerCase()) || '';
 
+  const isInteractive = Boolean(curriculumData.isInteractivePresentation || dbCourse.isInteractivePresentation);
+
   // Extract lessons from dbCourse.lessons, curriculumData.lessons, or synthesize from chunks / slides
   let lessons = [];
   if (Array.isArray(dbCourse.lessons) && dbCourse.lessons.length > 0) {
@@ -72,7 +74,10 @@ const mapRagCourse = (dbCourse) => {
       duration: '02:30',
       status: idx === 0 ? 'active' : 'locked',
       explanation: c.chunkText || c.semanticSummary || '',
-      bulletPoints: (Array.isArray(c.keyPoints) ? c.keyPoints : []).map(kp => cleanUnsupportedWords(kp))
+      explanations: { en: c.chunkText || c.semanticSummary || '' },
+      bulletPoints: (Array.isArray(c.keyPoints) ? c.keyPoints : []).map(kp => cleanUnsupportedWords(kp)),
+      audioUrls: {},
+      image: dbCourse.id ? `/api/v1/courses/${dbCourse.id}/slides/${idx + 1}/image` : null
     }));
   } else if (lessons.length === 0 && slides.length > 0) {
     lessons = slides.map((s, idx) => ({
@@ -84,14 +89,22 @@ const mapRagCourse = (dbCourse) => {
       duration: '02:00',
       status: idx === 0 ? 'active' : 'locked',
       explanation: s.fullText || '',
-      bulletPoints: (s.bulletPoints || []).map(bp => cleanUnsupportedWords(bp))
+      explanations: s.explanations || { en: s.fullText || '' },
+      bulletPoints: (s.bulletPoints || []).map(bp => cleanUnsupportedWords(bp)),
+      audioUrls: s.audioUrls || {},
+      image: `/api/v1/courses/${dbCourse.id}/slides/${s.slideNumber || idx + 1}/image`
     }));
   } else if (lessons.length > 0) {
-    lessons = lessons.map(l => ({
+    lessons = lessons.map((l, idx) => ({
       ...l,
       title: cleanUnsupportedWords(l.title),
       moduleTitle: cleanUnsupportedWords(l.moduleTitle || l.chapterTitle, dbCourse.title),
-      chapterTitle: cleanUnsupportedWords(l.chapterTitle || l.moduleTitle, dbCourse.title)
+      chapterTitle: cleanUnsupportedWords(l.chapterTitle || l.moduleTitle, dbCourse.title),
+      explanation: l.explanation || l.spoken_explanation || '',
+      explanations: l.explanations || (l.explanation ? { en: l.explanation } : {}),
+      audioUrls: l.audioUrls || {},
+      image: l.image || (dbCourse.id ? `/api/v1/courses/${dbCourse.id}/slides/${l.sourceSlides?.[0] || l.id || (idx + 1)}/image` : null),
+      keyTakeaways: l.keyTakeaways || []
     }));
   }
 
@@ -99,6 +112,7 @@ const mapRagCourse = (dbCourse) => {
     _isMapped: true,
     id: dbCourse.id,
     isCustom: true,
+    isInteractivePresentation: isInteractive,
     title: cleanUnsupportedWords(dbCourse.title),
     instructor: 'ARIA AI Tutor',
     category: 'AI Custom Courses',
@@ -107,7 +121,7 @@ const mapRagCourse = (dbCourse) => {
     reviewCount: 'Dynamic',
     students: 'Published',
     duration: 'Self-Paced',
-    modules: curriculumData.curriculum?.length || Math.ceil(lessons.length / 4) || 1,
+    modules: curriculumData.modules || (Array.isArray(curriculumData.curriculum) ? curriculumData.curriculum : []) || Math.ceil(lessons.length / 4) || 1,
     price: 0,
     free: true,
     badge: 'AI Course',
@@ -124,7 +138,7 @@ const mapRagCourse = (dbCourse) => {
     chunks,
     learning: curriculumData.learning || [],
     includes: curriculumData.includes || [],
-    curriculum: Array.isArray(curriculumData.curriculum) ? curriculumData.curriculum : [],
+    curriculum: curriculumData,
     curriculumData,
     lessons,
     quiz: curriculumData.quiz || []
@@ -317,7 +331,7 @@ const CoursePlayerRoute = () => {
         } catch (e) { }
         navigate('/')
       }}
-      onAssessment={(courseObj, activeLesson, quizQuestions, nextLessonId) => {
+      onAssessment={(courseObj, activeLesson, quizQuestions, nextLessonId, isFinalAssessment) => {
         try {
           if (window._skillbridgeCurrentAudio) {
             window._skillbridgeCurrentAudio.onended = null;
@@ -333,7 +347,7 @@ const CoursePlayerRoute = () => {
           window.speechSynthesis?.cancel?.();
         } catch (e) { }
         navigate(`/assessment/${id}`, {
-          state: { course: courseObj || course, activeLesson, quizQuestions, nextLessonId }
+          state: { course: courseObj || course, activeLesson, quizQuestions, nextLessonId, isFinalAssessment }
         })
       }}
     />
@@ -488,6 +502,65 @@ const HomeRoute = ({ searchQuery }) => {
 
 function App() {
   const [query, setQuery] = useState('')
+
+  useEffect(() => {
+    // Global listener to ensure numeric and phone inputs take numbers only
+    const handleKeyDown = (e) => {
+      const target = e.target;
+      if (!target || target.tagName !== 'INPUT') return;
+      const type = target.getAttribute('type');
+      const inputMode = target.getAttribute('inputmode');
+      const isNumeric = type === 'number' || inputMode === 'numeric' || inputMode === 'tel' || target.dataset.numeric === 'true';
+      if (!isNumeric) return;
+
+      // Allow navigation and control keys
+      if (
+        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key) ||
+        e.ctrlKey || e.metaKey || e.altKey
+      ) {
+        return;
+      }
+
+      if (type === 'tel' || inputMode === 'tel') {
+        if (!/[0-9+ -]/.test(e.key)) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Pure numeric: digits 0-9 only
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    };
+
+    const handleBeforeInput = (e) => {
+      const target = e.target;
+      if (!target || target.tagName !== 'INPUT') return;
+      const type = target.getAttribute('type');
+      const inputMode = target.getAttribute('inputmode');
+      const isNumeric = type === 'number' || inputMode === 'numeric' || inputMode === 'tel' || target.dataset.numeric === 'true';
+      if (!isNumeric || !e.data) return;
+
+      if (type === 'tel' || inputMode === 'tel') {
+        if (/[^0-9+ -]/.test(e.data)) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (/[^0-9]/.test(e.data)) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('beforeinput', handleBeforeInput, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('beforeinput', handleBeforeInput, true);
+    };
+  }, [])
 
   return (
     <BrowserRouter>

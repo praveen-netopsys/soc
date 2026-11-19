@@ -1505,8 +1505,11 @@ export async function extractDocument(file) {
   return doc;
 }
 
+export const extractDocumentContent = extractDocument;
+
 export default {
   extractDocument,
+  extractDocumentContent,
   extractPptx,
   extractPptBinary
 };

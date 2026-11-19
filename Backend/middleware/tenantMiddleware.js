@@ -8,17 +8,18 @@ import { tenantStorage } from '../config/prisma.js';
  */
 export const resolveTenant = async (req, res, next) => {
   try {
-    // 1. If an Authorization Bearer token is provided, inspect its cryptographically bound tenantCode
+    // 1. If an Authorization Bearer token or query token is provided, inspect its cryptographically bound tenantCode
     let rawTenant = null;
     const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    const tokenCandidate = (authHeader && authHeader.startsWith('Bearer '))
+      ? authHeader.split(' ')[1]
+      : (req.query?.token || req.headers['x-access-token']);
+
+    if (tokenCandidate) {
       try {
-        const tokenStr = authHeader.split(' ')[1];
-        if (tokenStr) {
-          const decoded = jwt.decode(tokenStr);
-          if (decoded && decoded.tenantCode) {
-            rawTenant = decoded.tenantCode;
-          }
+        const decoded = jwt.decode(tokenCandidate);
+        if (decoded && decoded.tenantCode) {
+          rawTenant = decoded.tenantCode;
         }
       } catch (tokenErr) {
         // Fall back to headers if token inspection encounters an error
@@ -33,6 +34,8 @@ export const resolveTenant = async (req, res, next) => {
         req.headers['x-tenant'] ||
         req.query?.tenant ||
         req.query?.tenantId ||
+        req.query?.tenantCode ||
+        req.query?.companyCode ||
         req.body?.tenantId ||
         req.body?.tenantCode ||
         req.body?.companyCode;

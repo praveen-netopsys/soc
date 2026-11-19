@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { aiGatewayClient } from './aiGatewayClient.js';
 import {
   isGarbageTitle,
   isPlaceholderTitle,
@@ -18,298 +19,270 @@ class AIService {
    * Chat and health checks must use this same base URL (port 8081).
    */
   getGatewayBaseUrl() {
-    const raw = (
-      process.env.SKILLBRIDGE_LLM_GATEWAY_URL ||
-      process.env.LLM_GATEWAY_URL ||
-      process.env.BRUTALLYHIRED_LLM_GATEWAY_URL ||
-      'https://rsvragsvr.tail236357.ts.net'
-    ).trim();
-    return raw.replace(/\/+$/, '');
+    return aiGatewayClient.getGatewayUrl();
   }
 
   getGatewayApiKey() {
-    return (
-      process.env.SKILLBRIDGE_LLM_GATEWAY_API_KEY ||
-      process.env.LLM_GATEWAY_API_KEY ||
-      process.env.BRUTALLYHIRED_LLM_API_KEY ||
-      process.env.VEDA_API_KEY ||
-      ''
-    ).trim();
+    return aiGatewayClient.getApiKey();
   }
 
   getGatewayHeaders(extra = {}) {
-    const headers = {
-      Accept: 'application/json',
-      ...extra
-    };
-    const apiKey = this.getGatewayApiKey();
-    if (apiKey) {
-      headers.Authorization = `Bearer ${apiKey}`;
-      headers['X-API-Key'] = apiKey;
-    }
-    return headers;
+    return aiGatewayClient._getHeaders(extra);
   }
 
   /**
-   * GET ${SKILLBRIDGE_LLM_GATEWAY_URL}/health
+   * GET /health via AIGatewayClient
    */
   async checkGatewayHealth() {
-    const gatewayUrl = this.getGatewayBaseUrl();
-    const response = await axios.get(`${gatewayUrl}/health`, {
-      timeout: 10000,
-      headers: this.getGatewayHeaders()
-    });
-    if (response.status < 200 || response.status >= 300) {
-      const err = new Error('Local LLM gateway health check failed.');
-      err.status = 503;
+    const res = await aiGatewayClient.checkHealth();
+    if (res.status !== 'ok') {
+      const err = new Error(res.error || 'Central AI Gateway health check failed.');
+      err.status = res.status_code || 503;
       throw err;
     }
-    return response.data;
+    return res.data || res;
   }
 
-  /**
-   * Flattens system prompt, recent conversation, and user/RAG context into the
-   * single `message` string required by the Veda gateway (not an OpenAI messages array).
-   */
-  _buildGatewayMessage(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
-    const MAX_TOTAL_CHARS = 18000;
-    const MAX_HISTORY_ITEM_CHARS = 600;
-    const sections = [];
+    /**
+     * Flattens system prompt, recent conversation, and user/RAG context into the
+     * single `message` string required by the Veda gateway (not an OpenAI messages array).
+     */
+    _buildGatewayMessage(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
+      const MAX_TOTAL_CHARS = 18000;
+      const MAX_HISTORY_ITEM_CHARS = 600;
+      const sections = [];
 
-    const system = typeof systemPrompt === 'string' ? systemPrompt.trim() : '';
-    if (system) sections.push(system);
+      const system = typeof systemPrompt === 'string' ? systemPrompt.trim() : '';
+      if (system) sections.push(system);
 
-    if (jsonMode) {
-      sections.push('Output requirements: Return valid JSON only. Do not wrap the JSON in markdown fences or add commentary.');
-    }
-
-    if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-8);
-      const historyLines = [];
-      for (const item of recentHistory) {
-        const isUser = item.role === 'user' || item.sender === 'user';
-        const content = item.content || item.text || '';
-        if (typeof content !== 'string' || !content.trim()) continue;
-        const clipped = content.trim().length > MAX_HISTORY_ITEM_CHARS
-          ? `${content.trim().slice(0, MAX_HISTORY_ITEM_CHARS)}…`
-          : content.trim();
-        historyLines.push(`${isUser ? 'Student' : 'ARIA'}: ${clipped}`);
+      if (jsonMode) {
+        sections.push('Output requirements: Return valid JSON only. Do not wrap the JSON in markdown fences or add commentary.');
       }
-      if (historyLines.length > 0) {
-        sections.push(`Previous conversation:\n${historyLines.join('\n')}`);
-      }
-    }
 
-    let user = typeof userPrompt === 'string' ? userPrompt.trim() : '';
-    if (user) sections.push(user);
-
-    let message = sections.filter(Boolean).join('\n\n');
-    if (message.length > MAX_TOTAL_CHARS) {
-      const withoutUser = sections.filter(s => s !== user).join('\n\n');
-      const overhead = withoutUser.length + (withoutUser ? 2 : 0);
-      const userBudget = Math.max(2000, MAX_TOTAL_CHARS - overhead - 80);
-      const truncatedUser = `${user.slice(0, userBudget)}\n\n[Course context truncated to fit the model window.]`;
-      message = [withoutUser, truncatedUser].filter(Boolean).join('\n\n');
-    }
-    return message;
-  }
-
-  _gatewayUnavailableError(status = 503) {
-    const err = new Error('The AI tutor is temporarily unavailable. Please try again in a moment.');
-    err.status = status;
-    return err;
-  }
-
-  async _callOpenAIFallback(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
-    const apiKey = (process.env.OPENAI_API_KEY || '').trim();
-    if (!apiKey) {
-      return null;
-    }
-    const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-    const messages = [];
-    if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
-    }
-    if (Array.isArray(conversationHistory)) {
-      for (const item of conversationHistory.slice(-8)) {
-        const isUser = item.role === 'user' || item.sender === 'user';
-        const content = item.content || item.text || '';
-        if (content && typeof content === 'string') {
-          messages.push({ role: isUser ? 'user' : 'assistant', content });
+      if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+        const recentHistory = conversationHistory.slice(-8);
+        const historyLines = [];
+        for (const item of recentHistory) {
+          const isUser = item.role === 'user' || item.sender === 'user';
+          const content = item.content || item.text || '';
+          if (typeof content !== 'string' || !content.trim()) continue;
+          const clipped = content.trim().length > MAX_HISTORY_ITEM_CHARS
+            ? `${content.trim().slice(0, MAX_HISTORY_ITEM_CHARS)}…`
+            : content.trim();
+          historyLines.push(`${isUser ? 'Student' : 'ARIA'}: ${clipped}`);
+        }
+        if (historyLines.length > 0) {
+          sections.push(`Previous conversation:\n${historyLines.join('\n')}`);
         }
       }
-    }
-    if (userPrompt) {
-      messages.push({ role: 'user', content: userPrompt });
+
+      let user = typeof userPrompt === 'string' ? userPrompt.trim() : '';
+      if (user) sections.push(user);
+
+      let message = sections.filter(Boolean).join('\n\n');
+      if (message.length > MAX_TOTAL_CHARS) {
+        const withoutUser = sections.filter(s => s !== user).join('\n\n');
+        const overhead = withoutUser.length + (withoutUser ? 2 : 0);
+        const userBudget = Math.max(2000, MAX_TOTAL_CHARS - overhead - 80);
+        const truncatedUser = `${user.slice(0, userBudget)}\n\n[Course context truncated to fit the model window.]`;
+        message = [withoutUser, truncatedUser].filter(Boolean).join('\n\n');
+      }
+      return message;
     }
 
-    const payload = {
-      model,
-      messages,
-      temperature: 0.3
-    };
-    if (jsonMode) {
-      payload.response_format = { type: 'json_object' };
+    _gatewayUnavailableError(status = 503) {
+      const err = new Error('The AI tutor is temporarily unavailable. Please try again in a moment.');
+      err.status = status;
+      return err;
     }
 
-    console.log(`[AIService] Local LLM gateway unavailable or timed out; seamlessly falling back to OpenAI (${model})...`);
-    const resp = await axios.post('https://api.openai.com/v1/chat/completions', payload, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    });
-    const text = resp.data?.choices?.[0]?.message?.content;
-    if (typeof text === 'string' && text.trim()) {
-      return text.trim();
+  async _callOpenAIFallback(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
+      const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+      if (!apiKey) {
+        return null;
+      }
+      const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+      if (Array.isArray(conversationHistory)) {
+        for (const item of conversationHistory.slice(-8)) {
+          const isUser = item.role === 'user' || item.sender === 'user';
+          const content = item.content || item.text || '';
+          if (content && typeof content === 'string') {
+            messages.push({ role: isUser ? 'user' : 'assistant', content });
+          }
+        }
+      }
+      if (userPrompt) {
+        messages.push({ role: 'user', content: userPrompt });
+      }
+
+      const payload = {
+        model,
+        messages,
+        temperature: 0.3
+      };
+      if (jsonMode) {
+        payload.response_format = { type: 'json_object' };
+      }
+
+      console.log(`[AIService] Local LLM gateway unavailable or timed out; seamlessly falling back to OpenAI (${model})...`);
+      const resp = await axios.post('https://api.openai.com/v1/chat/completions', payload, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+      const text = resp.data?.choices?.[0]?.message?.content;
+      if (typeof text === 'string' && text.trim()) {
+        return text.trim();
+      }
+      return null;
     }
-    return null;
-  }
 
   /**
    * Calls local Ollama running Qwen (e.g. qwen2.5, qwen, or custom model).
    * POST ${OLLAMA_BASE_URL}/api/chat
    */
   async _callOllama(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
-    const ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
-    const model = (process.env.OLLAMA_MODEL || 'qwen2.5:latest').trim();
+      const ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || '').replace(/\/+$/, '');
+      if (!ollamaBaseUrl) return null;
+      const model = (process.env.OLLAMA_MODEL || 'qwen3.5:9b').trim();
+      const apiKey = process.env.OLLAMA_API_KEY || '';
 
-    const messages = [];
-    if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
-    }
-    if (Array.isArray(conversationHistory)) {
-      for (const item of conversationHistory.slice(-8)) {
-        const isUser = item.role === 'user' || item.sender === 'user';
-        const content = item.content || item.text || '';
-        if (content && typeof content === 'string') {
-          messages.push({ role: isUser ? 'user' : 'assistant', content: content.trim() });
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+      if (Array.isArray(conversationHistory)) {
+        for (const item of conversationHistory.slice(-8)) {
+          const isUser = item.role === 'user' || item.sender === 'user';
+          const content = item.content || item.text || '';
+          if (content && typeof content === 'string') {
+            messages.push({ role: isUser ? 'user' : 'assistant', content: content.trim() });
+          }
         }
       }
-    }
-    if (userPrompt) {
-      messages.push({ role: 'user', content: userPrompt.trim() });
-    }
-
-    const payload = {
-      model,
-      messages,
-      stream: false,
-      options: {
-        temperature: 0.3
+      if (userPrompt) {
+        messages.push({ role: 'user', content: userPrompt.trim() });
       }
-    };
-    if (jsonMode) {
-      payload.format = 'json';
-    }
 
-    const resp = await axios.post(`${ollamaBaseUrl}/api/chat`, payload, {
-      timeout: jsonMode ? 60000 : 25000,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      const payload = {
+        model,
+        messages,
+        stream: false,
+        options: {
+          temperature: 0.3
+        }
+      };
+      if (jsonMode) {
+        payload.format = 'json';
+      }
 
-    const reply = resp.data?.message?.content;
-    if (typeof reply === 'string' && reply.trim()) {
-      console.log(`[AIService] Successfully generated response via Ollama Qwen (${model}).`);
-      return reply.trim();
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        headers['X-API-Key'] = apiKey;
+      }
+
+      const resp = await axios.post(`${ollamaBaseUrl}/api/chat`, payload, {
+        timeout: jsonMode ? 60000 : 25000,
+        headers
+      });
+
+      const reply = resp.data?.message?.content;
+      if (typeof reply === 'string' && reply.trim()) {
+        console.log(`[AIService] Successfully generated response via Ollama Qwen (${model}).`);
+        return reply.trim();
+      }
+      return null;
     }
-    return null;
-  }
 
   /**
    * Sends a prompt to the LLM backend with a robust tiered priority:
    * 1. Local Ollama (Qwen) if running
    * 2. Self-hosted Veda / Qwen LLM Gateway (SKILLBRIDGE_LLM_GATEWAY_URL)
    * 3. Cloud OpenAI API fallback (OPENAI_API_KEY)
+   * 1. Central AI Gateway (aiGatewayClient - POST /api/v1/chat with X-API-Key)
+   * 2. Local Ollama (Qwen) if running
+   * 3. Cloud OpenAI API fallback (if OPENAI_API_KEY is configured)
    */
   async _callLLM(systemPrompt, userPrompt, jsonMode = false, conversationHistory = []) {
-    // 1. Try local Ollama (Qwen) if available
-    try {
-      const ollamaResult = await this._callOllama(systemPrompt, userPrompt, jsonMode, conversationHistory);
-      if (ollamaResult) {
-        return ollamaResult;
-      }
-    } catch (_) {
-      // Ollama not reachable; gracefully proceed to next provider
-    }
+      // 1. Try local Ollama (Qwen) if available
+      // Build context message with history if needed
+      const message = this._buildGatewayMessage('', userPrompt, jsonMode, conversationHistory);
+      const system = (systemPrompt || '').trim();
 
-    // 2. Try Self-hosted LLM Gateway
-    let gatewayUrl;
-    try {
-      gatewayUrl = this.getGatewayBaseUrl();
-    } catch {
-      gatewayUrl = null;
-    }
+      // 1. Primary: Central AI Gateway (POST /api/v1/chat)
+      try {
+        const res = await aiGatewayClient.chat({
+          message,
+          system_prompt: system,
+          stream: false,
+          temperature: 0.3,
+          timeout: jsonMode ? 180000 : undefined
+        });
 
-    if (gatewayUrl) {
-      const message = this._buildGatewayMessage(systemPrompt, userPrompt, jsonMode, conversationHistory);
-      const endpoints = [`${gatewayUrl}/recruitment/chat`, `${gatewayUrl}/chat`];
-      for (const endpoint of endpoints) {
-        try {
-          const response = await axios.post(endpoint, { message }, {
-            headers: this.getGatewayHeaders({ 'Content-Type': 'application/json' }),
-            timeout: jsonMode ? 180000 : 25000
-          });
-
-          const text = response.data?.response;
-          if (typeof text === 'string' && text.trim()) {
-            return text.trim();
-          }
-        } catch (error) {
-          if (error.response?.status === 401 || error.response?.status === 404) {
-            continue; // try next endpoint (/recruitment/chat or /chat)
-          }
-          console.warn(`[AIService] Local LLM gateway issue at ${endpoint} (${error.code || error.response?.status || error.message}). Attempting OpenAI fallback...`);
-          break;
+        if (res && res.reply) {
+          return res.reply;
         }
+      } catch (gatewayErr) {
+        console.warn(`[AIService] Central AI Gateway notice (${gatewayErr.code || gatewayErr.status || gatewayErr.message}). Attempting secondary fallbacks...`);
       }
-    }
 
-    // 3. Automatic fallback to OpenAI if configured
-    try {
-      const fallbackResult = await this._callOpenAIFallback(systemPrompt, userPrompt, jsonMode, conversationHistory);
-      if (fallbackResult) {
-        return fallbackResult;
-      }
-    } catch (fbError) {
-      console.warn('[AIService] OpenAI fallback notice:', fbError.message);
-    }
+      // 2. Secondary: Local Ollama (Qwen) fallback if reachable
+      try {
+        const ollamaResult = await this._callOllama(systemPrompt, userPrompt, jsonMode, conversationHistory);
+        if (ollamaResult) {
+          return ollamaResult;
+        }
+      } catch (_) {}
 
-    throw this._gatewayUnavailableError(503);
-  }
+      // 3. Tertiary: OpenAI fallback if configured
+      try {
+        const openaiResult = await this._callOpenAIFallback(systemPrompt, userPrompt, jsonMode, conversationHistory);
+        if (openaiResult) {
+          return openaiResult;
+        }
+      } catch (_) {}
+
+      throw this._gatewayUnavailableError(503);
+    }
 
   /**
    * Generates a voice-optimized assistant response for arbitrary questions,
    * dynamically adopting the configured assistant name.
    */
-  async askAssistant({ question, assistantName = 'ARIA', language = 'en', context = '', conversationHistory = [] }) {
-    const cleanQuestion = String(question || '').trim();
-    const cleanName = String(assistantName || 'ARIA').trim();
+  async askAssistant({ question, assistantName = 'ARIA', language = 'en', context = '', conversationHistory =[] }) {
+      const cleanQuestion = String(question || '').trim();
+      const cleanName = String(assistantName || 'ARIA').trim();
 
-    if (!cleanQuestion) {
-      return {
-        answer: `I'm listening. Please ask your question.`,
-        text: `I'm listening. Please ask your question.`,
-        assistantName: cleanName
-      };
-    }
+      if (!cleanQuestion) {
+        return {
+          answer: `I'm listening. Please ask your question.`,
+          text: `I'm listening. Please ask your question.`,
+          assistantName: cleanName
+        };
+      }
 
-    // Check for direct identity questions (e.g. "What is your name?", "Who are you?")
-    const isIdentityQuestion = /^(what('?s| is) your name|who are you|what do i call you|what should i call you|tell me your name|introduce yourself|who are u)/i.test(
-      cleanQuestion.replace(/[?!.]/g, '').trim()
-    );
+      // Check for direct identity questions (e.g. "What is your name?", "Who are you?")
+      const isIdentityQuestion = /^(what('?s| is) your name|who are you|what do i call you|what should i call you|tell me your name|introduce yourself|who are u)/i.test(
+        cleanQuestion.replace(/[?!.]/g, '').trim()
+      );
 
-    if (isIdentityQuestion) {
-      const intro = `I am ${cleanName}, your personal AI voice assistant. How can I help you today?`;
-      return {
-        answer: intro,
-        text: intro,
-        assistantName: cleanName
-      };
-    }
+      if (isIdentityQuestion) {
+        const intro = `I am ${cleanName}, your personal AI voice assistant. How can I help you today?`;
+        return {
+          answer: intro,
+          text: intro,
+          assistantName: cleanName
+        };
+      }
 
-    const systemPrompt = `You are ${cleanName}, a knowledgeable, patient, and friendly AI voice assistant.
+      const systemPrompt = `You are ${cleanName}, a knowledgeable, patient, and friendly AI voice assistant.
 CRITICAL VOICE INTERACTION RULES:
 1. Speak concisely in 2 to 3 natural, clear sentences (around 30 to 55 words).
 2. Answer the question directly and accurately. Avoid fluff, filler, markdown formatting, or lengthy lists.
@@ -318,85 +291,85 @@ CRITICAL VOICE INTERACTION RULES:
 5. Do not repeat your name in every sentence. Only mention your name if explicitly asked.
 ${context ? `Relevant context: ${context.slice(0, 3000)}` : ''}`;
 
-    const userPrompt = `User Question: ${cleanQuestion}`;
+      const userPrompt = `User Question: ${cleanQuestion}`;
 
-    const rawReply = await this._callLLM(systemPrompt, userPrompt, false, conversationHistory);
-    const cleanReply = String(rawReply || '')
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/[*#_~`]/g, '')
-      .trim();
+      const rawReply = await this._callLLM(systemPrompt, userPrompt, false, conversationHistory);
+      const cleanReply = String(rawReply || '')
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/[*#_~`]/g, '')
+        .trim();
 
-    return {
-      answer: cleanReply,
-      text: cleanReply,
-      assistantName: cleanName
-    };
-  }
-
-  /**
-   * 768-d hashed n-gram embedding used when OpenAI embeddings are unavailable.
-   * Same vector width as CourseChunk.embedding so pgvector search keeps working.
-   */
-  _localHashEmbedding(text, dimensions = 768) {
-    const dim = dimensions || 768;
-    const vec = new Array(dim).fill(0);
-    const tokens = String(text || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter(t => t.length > 2);
-    const grams = [...tokens];
-    for (let i = 0; i < tokens.length - 1; i++) {
-      grams.push(`${tokens[i]}_${tokens[i + 1]}`);
+      return {
+        answer: cleanReply,
+        text: cleanReply,
+        assistantName: cleanName
+      };
     }
-    for (const gram of grams) {
-      let h = 2166136261;
-      for (let i = 0; i < gram.length; i++) {
-        h ^= gram.charCodeAt(i);
-        h = Math.imul(h, 16777619);
+
+    /**
+     * 768-d hashed n-gram embedding used when OpenAI embeddings are unavailable.
+     * Same vector width as CourseChunk.embedding so pgvector search keeps working.
+     */
+    _localHashEmbedding(text, dimensions = 768) {
+      const dim = dimensions || 768;
+      const vec = new Array(dim).fill(0);
+      const tokens = String(text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2);
+      const grams = [...tokens];
+      for (let i = 0; i < tokens.length - 1; i++) {
+        grams.push(`${tokens[i]}_${tokens[i + 1]}`);
       }
-      const idx = Math.abs(h) % dim;
-      vec[idx] += (h & 1) ? 1 : -1;
-    }
-    const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0)) || 1;
-    return vec.map(v => v / norm);
-  }
-
-  _parseJsonObject(raw) {
-    if (!raw || typeof raw !== 'string') {
-      throw new Error('Empty LLM JSON response.');
-    }
-    let s = raw
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/```json/gi, '```')
-      .replace(/```/g, '')
-      .trim();
-
-    const tryParse = (text) => JSON.parse(String(text).replace(/,\s*([}\]])/g, '$1'));
-
-    try {
-      return tryParse(s);
-    } catch {
-      const startObj = s.indexOf('{');
-      const endObj = s.lastIndexOf('}');
-      const startArr = s.indexOf('[');
-      const endArr = s.lastIndexOf(']');
-      if (startObj >= 0 && endObj > startObj) {
-        try {
-          return tryParse(s.slice(startObj, endObj + 1));
-        } catch { /* continue */ }
-      }
-      if (startArr >= 0 && endArr > startArr) {
-        const arr = tryParse(s.slice(startArr, endArr + 1));
-        if (Array.isArray(arr)) {
-          if (arr[0]?.concept || arr[0]?.chunkText) return { chunks: arr };
-          if (arr[0]?.title) return { lessons: arr };
-          return { items: arr };
+      for (const gram of grams) {
+        let h = 2166136261;
+        for (let i = 0; i < gram.length; i++) {
+          h ^= gram.charCodeAt(i);
+          h = Math.imul(h, 16777619);
         }
+        const idx = Math.abs(h) % dim;
+        vec[idx] += (h & 1) ? 1 : -1;
       }
-      throw new Error('LLM response was not valid JSON.');
+      const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0)) || 1;
+      return vec.map(v => v / norm);
     }
-  }
+
+    _parseJsonObject(raw) {
+      if (!raw || typeof raw !== 'string') {
+        throw new Error('Empty LLM JSON response.');
+      }
+      let s = raw
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/```json/gi, '```')
+        .replace(/```/g, '')
+        .trim();
+
+      const tryParse = (text) => JSON.parse(String(text).replace(/,\s*([}\]])/g, '$1'));
+
+      try {
+        return tryParse(s);
+      } catch {
+        const startObj = s.indexOf('{');
+        const endObj = s.lastIndexOf('}');
+        const startArr = s.indexOf('[');
+        const endArr = s.lastIndexOf(']');
+        if (startObj >= 0 && endObj > startObj) {
+          try {
+            return tryParse(s.slice(startObj, endObj + 1));
+          } catch { /* continue */ }
+        }
+        if (startArr >= 0 && endArr > startArr) {
+          const arr = tryParse(s.slice(startArr, endArr + 1));
+          if (Array.isArray(arr)) {
+            if (arr[0]?.concept || arr[0]?.chunkText) return { chunks: arr };
+            if (arr[0]?.title) return { lessons: arr };
+            return { items: arr };
+          }
+        }
+        throw new Error('LLM response was not valid JSON.');
+      }
+    }
 
   /**
    * Explains the content currently visible in the learner's document viewer.
@@ -411,21 +384,21 @@ ${context ? `Relevant context: ${context.slice(0, 3000)}` : ''}`;
    * }
    */
   async explainVisibleContent(contentInfo, courseTitle = '', language = 'en') {
-    const pageNum = contentInfo.pageNumber || contentInfo.page_number || contentInfo.slideNumber || 1;
-    const rawTitle = contentInfo.title || `Slide ${pageNum}`;
-    const pageTitle = isPlaceholderTitle(rawTitle) || isGarbageTitle(rawTitle)
-      ? `Slide ${pageNum}`
-      : stripSlidePlaceholders(rawTitle);
+      const pageNum = contentInfo.pageNumber || contentInfo.page_number || contentInfo.slideNumber || 1;
+      const rawTitle = contentInfo.title || `Slide ${pageNum}`;
+      const pageTitle = isPlaceholderTitle(rawTitle) || isGarbageTitle(rawTitle)
+        ? `Slide ${pageNum}`
+        : stripSlidePlaceholders(rawTitle);
 
-    const rawContent = contentInfo.text || contentInfo.fullText || contentInfo.content || '';
-    const cleanSourceContent = cleanUnsupportedWords(stripSlidePlaceholders(rawContent));
+      const rawContent = contentInfo.text || contentInfo.fullText || contentInfo.content || '';
+      const cleanSourceContent = cleanUnsupportedWords(stripSlidePlaceholders(rawContent));
 
-    const visualDesc = (contentInfo.visuals || contentInfo.images || [])
-      .map(v => stripSlidePlaceholders(v.name || v.descr || ''))
-      .filter(t => t && !isBinaryNoiseText(t))
-      .join('; ') || '';
+      const visualDesc = (contentInfo.visuals || contentInfo.images || [])
+        .map(v => stripSlidePlaceholders(v.name || v.descr || ''))
+        .filter(t => t && !isBinaryNoiseText(t))
+        .join('; ') || '';
 
-    const systemPrompt = `You are SkillBridge AI Tutor (ARIA), a senior workplace instructor explaining training material to a learner.
+      const systemPrompt = `You are SkillBridge AI Tutor (ARIA), a senior workplace instructor explaining training material to a learner.
 Explain the concepts, safety rules, and operational protocols for the slide or page currently displayed on screen.
 
 CRITICAL INSTRUCTIONAL & SAFETY RULES:
@@ -448,7 +421,7 @@ Return structured output containing ONLY valid JSON matching:
   "suggested_next_transition": "Short transition phrase guiding the student to the next topic"
 }`;
 
-    const userPrompt = `Training Course: "${courseTitle}"
+      const userPrompt = `Training Course: "${courseTitle}"
 Visible Page/Slide: ${pageNum} (${pageTitle})
 ${visualDesc ? `Key Visual Topics: ${visualDesc}\n` : ''}
 Extracted Training Content for this Slide:
@@ -456,388 +429,388 @@ ${cleanSourceContent.slice(0, 10000)}
 
 Deliver your instructional lecture for this slide.`;
 
-    try {
-      const response = await this._callLLM(systemPrompt, userPrompt, true);
-      const parsed = this._parseJsonObject(response);
-      if (parsed && (parsed.spoken_explanation || parsed.title)) {
-        const spoken = cleanUnsupportedWords(stripSlidePlaceholders(parsed.spoken_explanation || parsed.explanation || ''));
-        const keyPoints = (Array.isArray(parsed.key_points) ? parsed.key_points : [])
-          .map(kp => cleanUnsupportedWords(stripSlidePlaceholders(kp)))
-          .filter(kp => kp && kp.length > 5 && !isBinaryNoiseText(kp));
-        const safetyWarnings = (Array.isArray(parsed.safety_warnings) ? parsed.safety_warnings : [])
-          .map(sw => cleanUnsupportedWords(stripSlidePlaceholders(sw)))
-          .filter(sw => sw && sw.length > 5 && !isBinaryNoiseText(sw));
+      try {
+        const response = await this._callLLM(systemPrompt, userPrompt, true);
+        const parsed = this._parseJsonObject(response);
+        if (parsed && (parsed.spoken_explanation || parsed.title)) {
+          const spoken = cleanUnsupportedWords(stripSlidePlaceholders(parsed.spoken_explanation || parsed.explanation || ''));
+          const keyPoints = (Array.isArray(parsed.key_points) ? parsed.key_points : [])
+            .map(kp => cleanUnsupportedWords(stripSlidePlaceholders(kp)))
+            .filter(kp => kp && kp.length > 5 && !isBinaryNoiseText(kp));
+          const safetyWarnings = (Array.isArray(parsed.safety_warnings) ? parsed.safety_warnings : [])
+            .map(sw => cleanUnsupportedWords(stripSlidePlaceholders(sw)))
+            .filter(sw => sw && sw.length > 5 && !isBinaryNoiseText(sw));
 
-        return {
-          page_or_slide_number: parsed.page_or_slide_number || pageNum,
-          title: cleanUnsupportedWords(stripSlidePlaceholders(parsed.title || pageTitle)),
-          spoken_explanation: spoken,
-          key_points: keyPoints,
-          safety_warnings: safetyWarnings,
-          suggested_next_transition: parsed.suggested_next_transition || 'Let us proceed to the next section.'
-        };
+          return {
+            page_or_slide_number: parsed.page_or_slide_number || pageNum,
+            title: cleanUnsupportedWords(stripSlidePlaceholders(parsed.title || pageTitle)),
+            spoken_explanation: spoken,
+            key_points: keyPoints,
+            safety_warnings: safetyWarnings,
+            suggested_next_transition: parsed.suggested_next_transition || 'Let us proceed to the next section.'
+          };
+        }
+      } catch (err) {
+        console.warn('[AIService] explainVisibleContent LLM notice, using structured fallback:', err.message);
       }
-    } catch (err) {
-      console.warn('[AIService] explainVisibleContent LLM notice, using structured fallback:', err.message);
-    }
 
-    // Rich instructional fallback grounded directly in the cleaned slide content
-    const rawBullets = Array.isArray(contentInfo.bulletPoints) ? contentInfo.bulletPoints : [];
-    const bulletList = rawBullets
-      .map(b => cleanUnsupportedWords(stripSlidePlaceholders(b)))
-      .filter(b => b && b.length > 5 && !isBinaryNoiseText(b));
+      // Rich instructional fallback grounded directly in the cleaned slide content
+      const rawBullets = Array.isArray(contentInfo.bulletPoints) ? contentInfo.bulletPoints : [];
+      const bulletList = rawBullets
+        .map(b => cleanUnsupportedWords(stripSlidePlaceholders(b)))
+        .filter(b => b && b.length > 5 && !isBinaryNoiseText(b));
 
-    const cleanedText = cleanUnsupportedWords(stripSlidePlaceholders(rawContent))
-      .replace(/---+\s*Slide\s*\d+[^-\n]*---*/gi, '')
-      .replace(/###[^\n]+\n/g, '')
-      .replace(/\*\*Topic:[^\n]+\n/g, '')
-      .replace(/\*?\(Source:[^\)]*\)\*?/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+      const cleanedText = cleanUnsupportedWords(stripSlidePlaceholders(rawContent))
+        .replace(/---+\s*Slide\s*\d+[^-\n]*---*/gi, '')
+        .replace(/###[^\n]+\n/g, '')
+        .replace(/\*\*Topic:[^\n]+\n/g, '')
+        .replace(/\*?\(Source:[^\)]*\)\*?/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    let spokenText = '';
-    if (cleanedText && cleanedText.length > 30) {
-      spokenText = `In this section on ${pageTitle}, we focus on the core operational standards and safety requirements. ${cleanedText}`;
-    } else {
-      spokenText = `Here on slide ${pageNum}, we review ${pageTitle}. Please carefully review the operational instructions, safety guidelines, and workplace standards displayed on screen.`;
-    }
+      let spokenText = '';
+      if (cleanedText && cleanedText.length > 30) {
+        spokenText = `In this section on ${pageTitle}, we focus on the core operational standards and safety requirements. ${cleanedText}`;
+      } else {
+        spokenText = `Here on slide ${pageNum}, we review ${pageTitle}. Please carefully review the operational instructions, safety guidelines, and workplace standards displayed on screen.`;
+      }
 
-    const keyPoints = bulletList.length > 0
-      ? bulletList.slice(0, 5)
-      : [
+      const keyPoints = bulletList.length > 0
+        ? bulletList.slice(0, 5)
+        : [
           `Master all required procedures for ${pageTitle}`,
           `Maintain strict compliance with workplace safety protocols and operational standards`
         ];
 
-    return {
-      page_or_slide_number: pageNum,
-      title: pageTitle,
-      spoken_explanation: spokenText,
-      key_points: keyPoints,
-      safety_warnings: [],
-      suggested_next_transition: `Proceed to slide ${pageNum + 1} when ready.`
-    };
-  }
-
-  _slideTeachingText(slide) {
-    if (!slide) return '';
-    const visual = (slide.images || [])
-      .map(img => img.visionText || img.ocrText)
-      .filter(t => t && String(t).trim().length > 12)
-      .map(t => cleanUnsupportedWords(stripSlidePlaceholders(String(t))))
-      .filter(t => t && !isBinaryNoiseText(t))
-      .join('\n');
-    const parts = [
-      visual,
-      ...(slide.headings || []),
-      ...(slide.bulletPoints || []),
-      ...(slide.paragraphs || []),
-      slide.speakerNotes || ''
-    ]
-      .map(p => cleanUnsupportedWords(stripSlidePlaceholders(String(p || '').trim())))
-      .filter(p => p && p.length > 3 && !isBinaryNoiseText(p) && !isPlaceholderTitle(p));
-
-    const unique = [];
-    for (const part of parts) {
-      if (!unique.some(u => u === part || (part.length > 40 && u.includes(part)))) unique.push(part);
+      return {
+        page_or_slide_number: pageNum,
+        title: pageTitle,
+        spoken_explanation: spokenText,
+        key_points: keyPoints,
+        safety_warnings: [],
+        suggested_next_transition: `Proceed to slide ${pageNum + 1} when ready.`
+      };
     }
-    return unique.join('\n').trim();
-  }
 
-  _compactSlideSummaries(slides, maxChars = 16000) {
-    const lines = [];
-    for (const s of slides || []) {
-      const teaching = this._slideTeachingText(s).replace(/\s+/g, ' ').trim();
-      const title = isGarbageTitle(s.title) ? '' : String(s.title).trim();
-      const body = teaching.slice(0, 220);
-      lines.push(`Slide ${s.slideNumber}${title ? ` | ${title}` : ''}: ${body || '(image slide — describe from vision if present)'}`);
-    }
-    let out = lines.join('\n');
-    if (out.length > maxChars) {
-      out = `${out.slice(0, maxChars)}\n[Additional slides omitted for length. Cover the whole deck by grouping remaining slides into existing topics.]`;
-    }
-    return out;
-  }
+    _slideTeachingText(slide) {
+      if (!slide) return '';
+      const visual = (slide.images || [])
+        .map(img => img.visionText || img.ocrText)
+        .filter(t => t && String(t).trim().length > 12)
+        .map(t => cleanUnsupportedWords(stripSlidePlaceholders(String(t))))
+        .filter(t => t && !isBinaryNoiseText(t))
+        .join('\n');
+      const parts = [
+        visual,
+        ...(slide.headings || []),
+        ...(slide.bulletPoints || []),
+        ...(slide.paragraphs || []),
+        slide.speakerNotes || ''
+      ]
+        .map(p => cleanUnsupportedWords(stripSlidePlaceholders(String(p || '').trim())))
+        .filter(p => p && p.length > 3 && !isBinaryNoiseText(p) && !isPlaceholderTitle(p));
 
-  _sampleSlides(slides, max = 80) {
-    if (!Array.isArray(slides) || slides.length <= max) return slides || [];
-    const out = [];
-    const step = slides.length / max;
-    for (let i = 0; i < max; i++) {
-      out.push(slides[Math.min(slides.length - 1, Math.floor(i * step))]);
+      const unique = [];
+      for (const part of parts) {
+        if (!unique.some(u => u === part || (part.length > 40 && u.includes(part)))) unique.push(part);
+      }
+      return unique.join('\n').trim();
     }
-    return out;
-  }
 
-  _lessonDuration(index, lesson = null) {
-    const exp = lesson?.explanation || lesson?.explanations?.en || '';
-    if (exp && exp.length > 30) {
-      const words = exp.trim().split(/\s+/).filter(Boolean).length;
-      const totalSecs = Math.max(75, Math.min(300, Math.round(words / 2.15)));
-      const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-      const s = Math.floor(totalSecs % 60).toString().padStart(2, '0');
+    _compactSlideSummaries(slides, maxChars = 16000) {
+      const lines = [];
+      for (const s of slides || []) {
+        const teaching = this._slideTeachingText(s).replace(/\s+/g, ' ').trim();
+        const title = isGarbageTitle(s.title) ? '' : String(s.title).trim();
+        const body = teaching.slice(0, 220);
+        lines.push(`Slide ${s.slideNumber}${title ? ` | ${title}` : ''}: ${body || '(image slide — describe from vision if present)'}`);
+      }
+      let out = lines.join('\n');
+      if (out.length > maxChars) {
+        out = `${out.slice(0, maxChars)}\n[Additional slides omitted for length. Cover the whole deck by grouping remaining slides into existing topics.]`;
+      }
+      return out;
+    }
+
+    _sampleSlides(slides, max = 80) {
+      if (!Array.isArray(slides) || slides.length <= max) return slides || [];
+      const out = [];
+      const step = slides.length / max;
+      for (let i = 0; i < max; i++) {
+        out.push(slides[Math.min(slides.length - 1, Math.floor(i * step))]);
+      }
+      return out;
+    }
+
+    _lessonDuration(index, lesson = null) {
+      const exp = lesson?.explanation || lesson?.explanations?.en || '';
+      if (exp && exp.length > 30) {
+        const words = exp.trim().split(/\s+/).filter(Boolean).length;
+        const totalSecs = Math.max(75, Math.min(300, Math.round(words / 2.15)));
+        const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+        const s = Math.floor(totalSecs % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+      const slideCount = Array.isArray(lesson?.sourceSlides) && lesson.sourceSlides.length > 0 ? lesson.sourceSlides.length : 1;
+      const baseSecs = Math.min(300, Math.max(75, slideCount * 75 + ((index * 17) % 35)));
+      const m = Math.floor(baseSecs / 60).toString().padStart(2, '0');
+      const s = Math.floor(baseSecs % 60).toString().padStart(2, '0');
       return `${m}:${s}`;
     }
-    const slideCount = Array.isArray(lesson?.sourceSlides) && lesson.sourceSlides.length > 0 ? lesson.sourceSlides.length : 1;
-    const baseSecs = Math.min(300, Math.max(75, slideCount * 75 + ((index * 17) % 35)));
-    const m = Math.floor(baseSecs / 60).toString().padStart(2, '0');
-    const s = Math.floor(baseSecs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  }
 
-  _defaultQuiz(courseTitle, lessonTitle) {
-    const topic = lessonTitle || courseTitle;
-    return [
-      {
-        question: `What is the main purpose of "${topic}"?`,
-        options: [
-          `To learn and follow the required procedures for ${topic}`,
-          'To skip safety checks',
-          'To ignore workplace rules',
-          'None of the above'
-        ],
-        answerIndex: 0,
-        explanation: `This lesson trains learners to follow the required procedures for ${topic}.`
-      }
-    ];
-  }
-
-  _buildCourseFromLessons(fileName, lessons, quiz = null) {
-    const cleanName = cleanFileStem(fileName);
-    const formattedTitle = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    const modulesMap = [];
-    const moduleKey = new Map();
-
-    const normalized = (lessons || []).map((l, idx) => {
-      const moduleTitle = (!isGarbageTitle(l.moduleTitle) && l.moduleTitle)
-        || (!isGarbageTitle(l.chapterTitle) && l.chapterTitle)
-        || formattedTitle;
-      if (!moduleKey.has(moduleTitle)) {
-        moduleKey.set(moduleTitle, modulesMap.length + 1);
-        modulesMap.push({
-          title: moduleTitle,
-          lessons: 0,
-          duration: '0m',
-          totalSecs: 0,
-          locked: modulesMap.length > 0
-        });
-      }
-      const modId = moduleKey.get(moduleTitle);
-      modulesMap[modId - 1].lessons += 1;
-
-      const sourceSlides = Array.isArray(l.sourceSlides)
-        ? l.sourceSlides.map(n => Number(n)).filter(n => Number.isFinite(n) && n > 0)
-        : [];
-
-      // Calculate realistic dynamic duration (override static "08:00" or empty placeholders)
-      let duration = l.duration;
-      if (!duration || duration === '08:00' || duration === '8m' || duration === '10 mins') {
-        duration = this._lessonDuration(idx, { ...l, sourceSlides });
-      }
-
-      const parts = String(duration).split(':').map(p => parseInt(p, 10) || 0);
-      const lessonSecs = parts.length === 2 ? parts[0] * 60 + parts[1] : (parseInt(duration, 10) || 120);
-      modulesMap[modId - 1].totalSecs += lessonSecs;
-      modulesMap[modId - 1].duration = `${Math.max(1, Math.round(modulesMap[modId - 1].totalSecs / 60))}m`;
-
-      return {
-        ...l,
-        id: idx + 1,
-        chapterId: modId,
-        chapterTitle: moduleTitle,
-        moduleId: modId,
-        moduleTitle,
-        title: l.title,
-        sourceSlides,
-        duration,
-        status: idx === 0 ? 'active' : 'locked'
-      };
-    });
-
-    // Cleanup temporary totalSecs helper
-    modulesMap.forEach(m => delete m.totalSecs);
-
-    if (normalized.length === 0) {
-      normalized.push({
-        id: 1,
-        chapterId: 1,
-        chapterTitle: formattedTitle,
-        moduleId: 1,
-        moduleTitle: formattedTitle,
-        title: `${formattedTitle} Core Training`,
-        sourceSlides: [1],
-        duration: '02:30',
-        status: 'active'
-      });
-      modulesMap.push({ title: formattedTitle, lessons: 1, duration: '3m', locked: false });
+    _defaultQuiz(courseTitle, lessonTitle) {
+      const topic = lessonTitle || courseTitle;
+      return [
+        {
+          question: `What is the main purpose of "${topic}"?`,
+          options: [
+            `To learn and follow the required procedures for ${topic}`,
+            'To skip safety checks',
+            'To ignore workplace rules',
+            'None of the above'
+          ],
+          answerIndex: 0,
+          explanation: `This lesson trains learners to follow the required procedures for ${topic}.`
+        }
+      ];
     }
 
-    return {
-      title: `${formattedTitle} Training Program`,
-      description: `Training program covering the actual topics in ${formattedTitle}.`,
-      learning: normalized.slice(0, 4).map(l => `Understand and apply: ${l.title}`),
-      includes: [
-        'Interactive ARIA AI Avatar Tutoring',
-        `${normalized.length} training lessons`,
-        `${modulesMap.length} content-driven modules`,
-        'Digital verified completion certificate'
-      ],
-      curriculum: modulesMap,
-      lessons: normalized,
-      quiz: Array.isArray(quiz) && quiz.length > 0 ? quiz : this._defaultQuiz(formattedTitle, normalized[0]?.title)
-    };
-  }
+    _buildCourseFromLessons(fileName, lessons, quiz = null) {
+      const cleanName = cleanFileStem(fileName);
+      const formattedTitle = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const modulesMap = [];
+      const moduleKey = new Map();
 
-  _groupSlidesIntoLessons(slides, fileName) {
-    const cleanName = cleanFileStem(fileName);
-    const source = (slides || []).length ? slides : [];
-    const target = Math.min(18, Math.max(1, Math.ceil(Math.max(source.length, 1) / 5)));
-    const groupSize = Math.max(1, Math.ceil(source.length / target));
-    const lessons = [];
-
-    for (let i = 0; i < source.length; i += groupSize) {
-      const group = source.slice(i, i + groupSize);
-      const teaching = group.map(s => this._slideTeachingText(s)).join('\n');
-      let title = firstUsefulTitleLine(teaching);
-      if (!title && group[0] && !isGarbageTitle(group[0].title) && !isPlaceholderTitle(group[0].title)) {
-        title = stripSlidePlaceholders(group[0].title);
-      }
-      if (!title) title = `${cleanName} — Section ${lessons.length + 1}`;
-      const moduleIdx = Math.floor(lessons.length / 3);
-      lessons.push({
-        title,
-        moduleTitle: `${cleanName} Module ${moduleIdx + 1}`,
-        sourceSlides: group.map(s => s.slideNumber),
-        duration: this._lessonDuration(lessons.length)
-      });
-    }
-
-    return this._buildCourseFromLessons(fileName, lessons);
-  }
-
-  _sanitizeGeneratedCourse(parsed, slides, fileName) {
-    const slideCount = (slides || []).length;
-    let lessons = Array.isArray(parsed?.lessons) ? parsed.lessons : [];
-    lessons = lessons.filter(l => l && !isGarbageTitle(l.title) && !isPlaceholderTitle(l.title));
-
-    if (lessons.length === 0) {
-      return this._groupSlidesIntoLessons(slides, fileName);
-    }
-
-    // 1. Deduplicate lessons covering the exact same slides or identical title
-    const seenSlideKeys = new Set();
-    const seenTitles = new Set();
-    const deduped = [];
-    for (const l of lessons) {
-      const sns = Array.isArray(l.sourceSlides) ? [...l.sourceSlides].sort((a, b) => a - b).join(',') : '';
-      const cleanT = String(l.title || '').trim().toLowerCase();
-      if (sns && seenSlideKeys.has(sns)) continue;
-      if (cleanT && seenTitles.has(cleanT)) continue;
-      if (sns) seenSlideKeys.add(sns);
-      if (cleanT) seenTitles.add(cleanT);
-      deduped.push({
-        ...l,
-        title: stripSlidePlaceholders(l.title) || l.title
-      });
-    }
-    lessons = deduped.length ? deduped : lessons;
-
-    // 2. Prevent over-fragmentation: aim for meaningful chunks of 2-5 slides per lesson
-    const maxTarget = slideCount > 0 ? Math.min(14, Math.max(4, Math.ceil(slideCount / 2.5))) : 16;
-    if (lessons.length > maxTarget) {
-      const groupSize = Math.ceil(lessons.length / maxTarget);
-      const merged = [];
-      for (let i = 0; i < lessons.length; i += groupSize) {
-        const group = lessons.slice(i, i + groupSize);
-        const sourceSlides = [...new Set(group.flatMap(l => Array.isArray(l.sourceSlides) ? l.sourceSlides : []))];
-        merged.push({
-          ...group[0],
-          title: group.length > 1 && !group[0].title.includes('&') ? `${group[0].title} & Applications` : group[0].title,
-          moduleTitle: group[0].moduleTitle || group[0].chapterTitle,
-          sourceSlides
-        });
-      }
-      lessons = merged;
-    }
-
-    // 3. Ensure COMPLETE presentation slide coverage across all lessons (no dropped slides!)
-    if (slideCount > 0) {
-      const covered = new Set(lessons.flatMap(l => Array.isArray(l.sourceSlides) ? l.sourceSlides : []));
-      const uncoveredSlides = [];
-      for (let s = 1; s <= slideCount; s++) {
-        if (!covered.has(s)) uncoveredSlides.push(s);
-      }
-
-      if (uncoveredSlides.length > 0) {
-        console.log(`[AIService] ${uncoveredSlides.length} slides were not covered by LLM pass. Grouping into supplemental lessons.`);
-        const groupSize = Math.max(2, Math.min(6, Math.ceil(uncoveredSlides.length / 5)));
-        const cleanName = cleanFileStem(fileName);
-
-        for (let i = 0; i < uncoveredSlides.length; i += groupSize) {
-          const subGroup = uncoveredSlides.slice(i, i + groupSize);
-          const firstSlideNum = subGroup[0];
-          const firstSlideObj = slides.find(s => s.slideNumber === firstSlideNum);
-          let title = '';
-          if (firstSlideObj) {
-            title = firstUsefulTitleLine(this._slideTeachingText(firstSlideObj));
-            if (!title && firstSlideObj.title && !isGarbageTitle(firstSlideObj.title) && !isPlaceholderTitle(firstSlideObj.title)) {
-              title = stripSlidePlaceholders(firstSlideObj.title);
-            }
-          }
-          if (!title) {
-            title = `${cleanName}: Part ${lessons.length + 1}`;
-          }
-
-          const modIdx = Math.floor(lessons.length / 3) + 1;
-          lessons.push({
-            title,
-            moduleTitle: `${cleanName} Module ${modIdx}`,
-            sourceSlides: subGroup,
-            duration: this._lessonDuration(lessons.length)
+      const normalized = (lessons || []).map((l, idx) => {
+        const moduleTitle = (!isGarbageTitle(l.moduleTitle) && l.moduleTitle)
+          || (!isGarbageTitle(l.chapterTitle) && l.chapterTitle)
+          || formattedTitle;
+        if (!moduleKey.has(moduleTitle)) {
+          moduleKey.set(moduleTitle, modulesMap.length + 1);
+          modulesMap.push({
+            title: moduleTitle,
+            lessons: 0,
+            duration: '0m',
+            totalSecs: 0,
+            locked: modulesMap.length > 0
           });
         }
+        const modId = moduleKey.get(moduleTitle);
+        modulesMap[modId - 1].lessons += 1;
+
+        const sourceSlides = Array.isArray(l.sourceSlides)
+          ? l.sourceSlides.map(n => Number(n)).filter(n => Number.isFinite(n) && n > 0)
+          : [];
+
+        // Calculate realistic dynamic duration (override static "08:00" or empty placeholders)
+        let duration = l.duration;
+        if (!duration || duration === '08:00' || duration === '8m' || duration === '10 mins') {
+          duration = this._lessonDuration(idx, { ...l, sourceSlides });
+        }
+
+        const parts = String(duration).split(':').map(p => parseInt(p, 10) || 0);
+        const lessonSecs = parts.length === 2 ? parts[0] * 60 + parts[1] : (parseInt(duration, 10) || 120);
+        modulesMap[modId - 1].totalSecs += lessonSecs;
+        modulesMap[modId - 1].duration = `${Math.max(1, Math.round(modulesMap[modId - 1].totalSecs / 60))}m`;
+
+        return {
+          ...l,
+          id: idx + 1,
+          chapterId: modId,
+          chapterTitle: moduleTitle,
+          moduleId: modId,
+          moduleTitle,
+          title: l.title,
+          sourceSlides,
+          duration,
+          status: idx === 0 ? 'active' : 'locked'
+        };
+      });
+
+      // Cleanup temporary totalSecs helper
+      modulesMap.forEach(m => delete m.totalSecs);
+
+      if (normalized.length === 0) {
+        normalized.push({
+          id: 1,
+          chapterId: 1,
+          chapterTitle: formattedTitle,
+          moduleId: 1,
+          moduleTitle: formattedTitle,
+          title: `${formattedTitle} Core Training`,
+          sourceSlides: [1],
+          duration: '02:30',
+          status: 'active'
+        });
+        modulesMap.push({ title: formattedTitle, lessons: 1, duration: '3m', locked: false });
       }
+
+      return {
+        title: `${formattedTitle} Training Program`,
+        description: `Training program covering the actual topics in ${formattedTitle}.`,
+        learning: normalized.slice(0, 4).map(l => `Understand and apply: ${l.title}`),
+        includes: [
+          'Interactive ARIA AI Avatar Tutoring',
+          `${normalized.length} training lessons`,
+          `${modulesMap.length} content-driven modules`,
+          'Digital verified completion certificate'
+        ],
+        curriculum: modulesMap,
+        lessons: normalized,
+        quiz: Array.isArray(quiz) && quiz.length > 0 ? quiz : this._defaultQuiz(formattedTitle, normalized[0]?.title)
+      };
     }
 
-    const course = this._buildCourseFromLessons(fileName, lessons, parsed.quiz);
-    if (parsed.title && !isGarbageTitle(parsed.title)) course.title = stripSlidePlaceholders(parsed.title);
-    if (parsed.description) course.description = stripSlidePlaceholders(parsed.description);
-    if (Array.isArray(parsed.learning) && parsed.learning.length) course.learning = parsed.learning.map(stripSlidePlaceholders);
-    if (Array.isArray(parsed.includes) && parsed.includes.length) course.includes = parsed.includes;
+    _groupSlidesIntoLessons(slides, fileName) {
+      const cleanName = cleanFileStem(fileName);
+      const source = (slides || []).length ? slides : [];
+      const target = Math.min(18, Math.max(1, Math.ceil(Math.max(source.length, 1) / 5)));
+      const groupSize = Math.max(1, Math.ceil(source.length / target));
+      const lessons = [];
 
-    course.lessons = course.lessons.map((l, idx) => {
-      let matchedSlides = (l.sourceSlides || []).filter(n => n >= 1 && n <= Math.max(1, slideCount));
-      if (matchedSlides.length === 0 && slideCount > 0) {
-        const byTitle = slides.filter(s =>
-          l.title && s.title && !isGarbageTitle(s.title) && (
-            l.title.toLowerCase().includes(String(s.title).toLowerCase()) ||
-            String(s.title).toLowerCase().includes(l.title.toLowerCase())
-          )
-        ).map(s => s.slideNumber);
-        matchedSlides = byTitle.length ? byTitle : [Math.min(slideCount, idx + 1)];
+      for (let i = 0; i < source.length; i += groupSize) {
+        const group = source.slice(i, i + groupSize);
+        const teaching = group.map(s => this._slideTeachingText(s)).join('\n');
+        let title = firstUsefulTitleLine(teaching);
+        if (!title && group[0] && !isGarbageTitle(group[0].title) && !isPlaceholderTitle(group[0].title)) {
+          title = stripSlidePlaceholders(group[0].title);
+        }
+        if (!title) title = `${cleanName} — Section ${lessons.length + 1}`;
+        const moduleIdx = Math.floor(lessons.length / 3);
+        lessons.push({
+          title,
+          moduleTitle: `${cleanName} Module ${moduleIdx + 1}`,
+          sourceSlides: group.map(s => s.slideNumber),
+          duration: this._lessonDuration(lessons.length)
+        });
       }
-      return { ...l, sourceSlides: matchedSlides };
-    });
 
-    return course;
-  }
+      return this._buildCourseFromLessons(fileName, lessons);
+    }
+
+    _sanitizeGeneratedCourse(parsed, slides, fileName) {
+      const slideCount = (slides || []).length;
+      let lessons = Array.isArray(parsed?.lessons) ? parsed.lessons : [];
+      lessons = lessons.filter(l => l && !isGarbageTitle(l.title) && !isPlaceholderTitle(l.title));
+
+      if (lessons.length === 0) {
+        return this._groupSlidesIntoLessons(slides, fileName);
+      }
+
+      // 1. Deduplicate lessons covering the exact same slides or identical title
+      const seenSlideKeys = new Set();
+      const seenTitles = new Set();
+      const deduped = [];
+      for (const l of lessons) {
+        const sns = Array.isArray(l.sourceSlides) ? [...l.sourceSlides].sort((a, b) => a - b).join(',') : '';
+        const cleanT = String(l.title || '').trim().toLowerCase();
+        if (sns && seenSlideKeys.has(sns)) continue;
+        if (cleanT && seenTitles.has(cleanT)) continue;
+        if (sns) seenSlideKeys.add(sns);
+        if (cleanT) seenTitles.add(cleanT);
+        deduped.push({
+          ...l,
+          title: stripSlidePlaceholders(l.title) || l.title
+        });
+      }
+      lessons = deduped.length ? deduped : lessons;
+
+      // 2. Prevent over-fragmentation: aim for meaningful chunks of 2-5 slides per lesson
+      const maxTarget = slideCount > 0 ? Math.min(14, Math.max(4, Math.ceil(slideCount / 2.5))) : 16;
+      if (lessons.length > maxTarget) {
+        const groupSize = Math.ceil(lessons.length / maxTarget);
+        const merged = [];
+        for (let i = 0; i < lessons.length; i += groupSize) {
+          const group = lessons.slice(i, i + groupSize);
+          const sourceSlides = [...new Set(group.flatMap(l => Array.isArray(l.sourceSlides) ? l.sourceSlides : []))];
+          merged.push({
+            ...group[0],
+            title: group.length > 1 && !group[0].title.includes('&') ? `${group[0].title} & Applications` : group[0].title,
+            moduleTitle: group[0].moduleTitle || group[0].chapterTitle,
+            sourceSlides
+          });
+        }
+        lessons = merged;
+      }
+
+      // 3. Ensure COMPLETE presentation slide coverage across all lessons (no dropped slides!)
+      if (slideCount > 0) {
+        const covered = new Set(lessons.flatMap(l => Array.isArray(l.sourceSlides) ? l.sourceSlides : []));
+        const uncoveredSlides = [];
+        for (let s = 1; s <= slideCount; s++) {
+          if (!covered.has(s)) uncoveredSlides.push(s);
+        }
+
+        if (uncoveredSlides.length > 0) {
+          console.log(`[AIService] ${uncoveredSlides.length} slides were not covered by LLM pass. Grouping into supplemental lessons.`);
+          const groupSize = Math.max(2, Math.min(6, Math.ceil(uncoveredSlides.length / 5)));
+          const cleanName = cleanFileStem(fileName);
+
+          for (let i = 0; i < uncoveredSlides.length; i += groupSize) {
+            const subGroup = uncoveredSlides.slice(i, i + groupSize);
+            const firstSlideNum = subGroup[0];
+            const firstSlideObj = slides.find(s => s.slideNumber === firstSlideNum);
+            let title = '';
+            if (firstSlideObj) {
+              title = firstUsefulTitleLine(this._slideTeachingText(firstSlideObj));
+              if (!title && firstSlideObj.title && !isGarbageTitle(firstSlideObj.title) && !isPlaceholderTitle(firstSlideObj.title)) {
+                title = stripSlidePlaceholders(firstSlideObj.title);
+              }
+            }
+            if (!title) {
+              title = `${cleanName}: Part ${lessons.length + 1}`;
+            }
+
+            const modIdx = Math.floor(lessons.length / 3) + 1;
+            lessons.push({
+              title,
+              moduleTitle: `${cleanName} Module ${modIdx}`,
+              sourceSlides: subGroup,
+              duration: this._lessonDuration(lessons.length)
+            });
+          }
+        }
+      }
+
+      const course = this._buildCourseFromLessons(fileName, lessons, parsed.quiz);
+      if (parsed.title && !isGarbageTitle(parsed.title)) course.title = stripSlidePlaceholders(parsed.title);
+      if (parsed.description) course.description = stripSlidePlaceholders(parsed.description);
+      if (Array.isArray(parsed.learning) && parsed.learning.length) course.learning = parsed.learning.map(stripSlidePlaceholders);
+      if (Array.isArray(parsed.includes) && parsed.includes.length) course.includes = parsed.includes;
+
+      course.lessons = course.lessons.map((l, idx) => {
+        let matchedSlides = (l.sourceSlides || []).filter(n => n >= 1 && n <= Math.max(1, slideCount));
+        if (matchedSlides.length === 0 && slideCount > 0) {
+          const byTitle = slides.filter(s =>
+            l.title && s.title && !isGarbageTitle(s.title) && (
+              l.title.toLowerCase().includes(String(s.title).toLowerCase()) ||
+              String(s.title).toLowerCase().includes(l.title.toLowerCase())
+            )
+          ).map(s => s.slideNumber);
+          matchedSlides = byTitle.length ? byTitle : [Math.min(slideCount, idx + 1)];
+        }
+        return { ...l, sourceSlides: matchedSlides };
+      });
+
+      return course;
+    }
 
   async _chunkByCurriculumLessons(fileName, docMetadata = {}) {
-    const { slides = [], curriculum } = docMetadata;
-    const lessons = curriculum.lessons || [];
-    const slideMap = new Map((slides || []).map(s => [s.slideNumber, s]));
+      const { slides = [], curriculum } = docMetadata;
+      const lessons = curriculum.lessons || [];
+      const slideMap = new Map((slides || []).map(s => [s.slideNumber, s]));
 
-    const lessonBlocks = lessons.map((lesson, idx) => {
-      const sns = Array.isArray(lesson.sourceSlides) ? lesson.sourceSlides : [];
-      const material = sns
-        .map(n => this._slideTeachingText(slideMap.get(n)))
-        .filter(Boolean)
-        .join('\n')
-        .slice(0, 900);
-      return `LESSON ${idx + 1}: ${lesson.title}\nMODULE: ${lesson.moduleTitle || lesson.chapterTitle || ''}\nSLIDES: ${sns.join(', ') || 'unknown'}\nMATERIAL:\n${material || '(image-based slide — write a trainer explanation of this lesson topic)'}`;
-    }).join('\n\n---\n\n');
+      const lessonBlocks = lessons.map((lesson, idx) => {
+        const sns = Array.isArray(lesson.sourceSlides) ? lesson.sourceSlides : [];
+        const material = sns
+          .map(n => this._slideTeachingText(slideMap.get(n)))
+          .filter(Boolean)
+          .join('\n')
+          .slice(0, 900);
+        return `LESSON ${idx + 1}: ${lesson.title}\nMODULE: ${lesson.moduleTitle || lesson.chapterTitle || ''}\nSLIDES: ${sns.join(', ') || 'unknown'}\nMATERIAL:\n${material || '(image-based slide — write a trainer explanation of this lesson topic)'}`;
+      }).join('\n\n---\n\n');
 
-    const systemPrompt = `You are SkillBridge's knowledge engineer. Using the local training material, write semantic knowledge chunks for ARIA.
+      const systemPrompt = `You are SkillBridge's knowledge engineer. Using the local training material, write semantic knowledge chunks for ARIA.
 Rules:
 - One chunk per lesson.
 - Ignore OCR garbage, random symbols, font names, and unreadable fragments.
@@ -847,98 +820,96 @@ Rules:
 Return ONLY JSON:
 {"chunks":[{"concept":"Readable concept name","topic":"Module name","keyPoints":["..."],"sourceSlides":[1,2],"chunkText":"### 📌 Concept: ...\\n\\n..."}]}`;
 
-    const aiResponse = await this._callLLM(systemPrompt, `File: ${fileName}\n\n${lessonBlocks}`, true);
-    const parsed = this._parseJsonObject(aiResponse);
-    if (!parsed?.chunks?.length) throw new Error('No chunks from curriculum-guided LLM pass.');
-    const withSources = parsed.chunks.map((c, idx) => ({
-      ...c,
-      concept: isGarbageTitle(c.concept) ? (lessons[idx]?.title || c.concept) : c.concept,
-      sourceSlides: Array.isArray(c.sourceSlides) && c.sourceSlides.length
-        ? c.sourceSlides
-        : (lessons[idx]?.sourceSlides || [])
-    }));
-    return this._formatSynthesizedChunks(withSources, docMetadata);
-  }
+      const aiResponse = await this._callLLM(systemPrompt, `File: ${fileName}\n\n${lessonBlocks}`, true);
+      const parsed = this._parseJsonObject(aiResponse);
+      if (!parsed?.chunks?.length) throw new Error('No chunks from curriculum-guided LLM pass.');
+      const withSources = parsed.chunks.map((c, idx) => ({
+        ...c,
+        concept: isGarbageTitle(c.concept) ? (lessons[idx]?.title || c.concept) : c.concept,
+        sourceSlides: Array.isArray(c.sourceSlides) && c.sourceSlides.length
+          ? c.sourceSlides
+          : (lessons[idx]?.sourceSlides || [])
+      }));
+      return this._formatSynthesizedChunks(withSources, docMetadata);
+    }
 
   /**
    * Generates a single vector embedding using OpenAI text-embedding-3-small,
    * falling back to a local 768-d hash embedding if OpenAI has no credits.
    */
   async getEmbedding(text, dimensions = 768) {
-    if (!text || !text.trim()) return null;
-    if (this._openaiEmbedUnavailable) {
-      return this._localHashEmbedding(text, dimensions);
-    }
+      if (!text || !text.trim()) return null;
+      if (this._openaiEmbedUnavailable) {
+        return this._localHashEmbedding(text, dimensions);
+      }
 
-    const apiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY || '';
-    const baseUrl = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || 'https://api.openai.com/v1';
+      const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+      const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
 
-    if (!apiKey) {
-      this._openaiEmbedUnavailable = true;
-      console.warn('[AIService] OPENAI_API_KEY is not configured for embeddings. Using local 768-d embeddings.');
-      return this._localHashEmbedding(text, dimensions);
-    }
+      if (!apiKey || (!apiKey.startsWith('sk-') && baseUrl.includes('openai'))) {
+        this._openaiEmbedUnavailable = true;
+        return this._localHashEmbedding(text, dimensions);
+      }
 
-    try {
-      const response = await axios.post(`${baseUrl}/embeddings`, {
-        model: 'text-embedding-3-small',
-        input: text.slice(0, 8000),
-        dimensions: dimensions
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        timeout: 30000
-      });
-      return response.data?.data?.[0]?.embedding || this._localHashEmbedding(text, dimensions);
-    } catch (err) {
-      this._openaiEmbedUnavailable = true;
-      console.warn('[AIService] OpenAI embeddings unavailable. Using local 768-d embeddings:', err.response?.data?.error?.message || err.message);
-      return this._localHashEmbedding(text, dimensions);
+      try {
+        const response = await axios.post(`${baseUrl}/embeddings`, {
+          model: 'text-embedding-3-small',
+          input: text.slice(0, 8000),
+          dimensions: dimensions
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          timeout: 30000
+        });
+        return response.data?.data?.[0]?.embedding || this._localHashEmbedding(text, dimensions);
+      } catch (err) {
+        this._openaiEmbedUnavailable = true;
+        console.warn('[AIService] OpenAI embeddings unavailable. Using local 768-d embeddings:', err.response?.data?.error?.message || err.message);
+        return this._localHashEmbedding(text, dimensions);
+      }
     }
-  }
 
   /**
    * Generates batch vector embeddings using OpenAI text-embedding-3-small,
    * falling back to local 768-d hash embeddings if OpenAI has no credits.
    */
   async getEmbeddings(textArray, dimensions = 768) {
-    if (!textArray || !Array.isArray(textArray) || textArray.length === 0) return [];
-    const cleanInputs = textArray.map(t => (typeof t === 'string' ? t.slice(0, 8000) : ''));
-    if (this._openaiEmbedUnavailable) {
+      if (!textArray || !Array.isArray(textArray) || textArray.length === 0) return [];
+      const cleanInputs = textArray.map(t => (typeof t === 'string' ? t.slice(0, 8000) : ''));
+      if (this._openaiEmbedUnavailable) {
+        return cleanInputs.map(t => this._localHashEmbedding(t, dimensions));
+      }
+
+      const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+      const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+
+      if (!apiKey || (!apiKey.startsWith('sk-') && baseUrl.includes('openai'))) {
+        this._openaiEmbedUnavailable = true;
+        return cleanInputs.map(t => this._localHashEmbedding(t, dimensions));
+      }
+
+      try {
+        const response = await axios.post(`${baseUrl}/embeddings`, {
+          model: 'text-embedding-3-small',
+          input: cleanInputs,
+          dimensions: dimensions
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          timeout: 60000
+        });
+        const vectors = response.data?.data?.map(d => d.embedding) || [];
+        if (vectors.length === cleanInputs.length) return vectors;
+      } catch (err) {
+        this._openaiEmbedUnavailable = true;
+        console.warn('[AIService] OpenAI batch embeddings unavailable. Using local 768-d embeddings:', err.response?.data?.error?.message || err.message);
+      }
       return cleanInputs.map(t => this._localHashEmbedding(t, dimensions));
     }
-
-    const apiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY || '';
-    const baseUrl = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || 'https://api.openai.com/v1';
-
-    if (!apiKey) {
-      this._openaiEmbedUnavailable = true;
-      console.warn('[AIService] OPENAI_API_KEY is not configured for batch embeddings. Using local 768-d embeddings.');
-      return cleanInputs.map(t => this._localHashEmbedding(t, dimensions));
-    }
-
-    try {
-      const response = await axios.post(`${baseUrl}/embeddings`, {
-        model: 'text-embedding-3-small',
-        input: cleanInputs,
-        dimensions: dimensions
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        timeout: 60000
-      });
-      const vectors = response.data?.data?.map(d => d.embedding) || [];
-      if (vectors.length === cleanInputs.length) return vectors;
-    } catch (err) {
-      this._openaiEmbedUnavailable = true;
-      console.warn('[AIService] OpenAI batch embeddings unavailable. Using local 768-d embeddings:', err.response?.data?.error?.message || err.message);
-    }
-    return cleanInputs.map(t => this._localHashEmbedding(t, dimensions));
-  }
 
   /**
    * AI-Driven Document Comprehension and Semantic Knowledge Chunking Engine.
@@ -951,50 +922,54 @@ Return ONLY JSON:
    * @returns {Promise<Array<object>>} Structured semantic chunks ready for validation and pgvector embedding.
    */
   async understandAndChunkDocument(fileName, fullText, docMetadata = {}) {
-    const { fileType = 'document', slides = [], pages = [], curriculum = null } = docMetadata;
-    const isPpt = fileType === 'pptx' || fileType === 'ppt' || slides.length > 0;
-    const textLength = (fullText || '').length;
+      const { fileType = 'document', slides = [], pages = [], curriculum = null } = docMetadata;
+      const effectiveSlides = (Array.isArray(slides) && slides.length > 0)
+        ? slides
+        : (Array.isArray(curriculum?.slides) && curriculum.slides.length > 0 ? curriculum.slides : []);
+      const effectiveLessons = Array.isArray(curriculum?.lessons) && curriculum.lessons.length > 0 ? curriculum.lessons : [];
+      const isPpt = fileType === 'pptx' || fileType === 'ppt' || fileType === 'presentation' || effectiveSlides.length > 0 || effectiveLessons.length > 0;
+      const textLength = (fullText || '').length;
 
-    console.log(`[AI Comprehension] Studying document "${fileName}" (${fileType.toUpperCase()}, ${textLength} chars, ${slides.length} slides, ${pages.length} pages)...`);
+      console.log(`[AI Comprehension] Studying document "${fileName}" (${fileType.toUpperCase()}, ${textLength} chars, ${effectiveSlides.length} slides, ${effectiveLessons.length} lessons, ${pages.length} pages)...`);
 
-    // For presentations or large documents, structural semantic chunking produces 100% complete,
-    // grounded, high-fidelity knowledge chunks instantly without 5-10 minutes of sequential LLM round trips
-    if (isPpt && slides.length > 0) {
-      console.log(`[AI Comprehension] Building fast grounded semantic chunks for ${slides.length} presentation slides...`);
-      return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
-    }
+      // For presentations or large documents, structural semantic chunking produces 100% complete,
+      // grounded, high-fidelity knowledge chunks instantly without 5-10 minutes of sequential LLM round trips
+      if (isPpt && (effectiveSlides.length > 0 || effectiveLessons.length > 0)) {
+        console.log(`[AI Comprehension] Building fast grounded semantic chunks for ${effectiveSlides.length || effectiveLessons.length} presentation slides/lessons...`);
+        return this._getStructuralSemanticChunks(fileName, fullText, { ...docMetadata, slides: effectiveSlides, curriculum });
+      }
 
-    if (textLength > 35000 || pages.length > 20) {
-      console.log(`[AI Comprehension] Large document detected. Building fast grounded structural semantic chunks...`);
-      return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
-    }
+      if (textLength > 35000 || pages.length > 20) {
+        console.log(`[AI Comprehension] Large document detected. Building fast grounded structural semantic chunks...`);
+        return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
+      }
 
-    // Build structured document context for standard-sized documents
-    let docContext = '';
-    if (isPpt && slides.length > 0) {
-      docContext = slides.map(s => {
-        let sDesc = `[SLIDE ${s.slideNumber}: ${s.title}]\n`;
-        if (s.headings?.length) sDesc += `Headings: ${s.headings.join(' | ')}\n`;
-        if (s.paragraphs?.length) sDesc += s.paragraphs.join('\n') + '\n';
-        if (s.bulletPoints?.length) sDesc += s.bulletPoints.join('\n') + '\n';
-        if (s.tables?.length) sDesc += s.tables.join('\n') + '\n';
-        if (s.images?.length) {
-          sDesc += `Visuals on Slide: ` + s.images.map(img => `[Visual ID: ${img.id}] "${img.name}"`).join('; ') + '\n';
-          const visualText = s.images.map(img => img.visionText || img.ocrText).filter(Boolean).join('\n');
-          if (visualText) {
-            sDesc += `Visible training text read from slide images (explain this to learners):\n${visualText}\n`;
+      // Build structured document context for standard-sized documents
+      let docContext = '';
+      if (isPpt && slides.length > 0) {
+        docContext = slides.map(s => {
+          let sDesc = `[SLIDE ${s.slideNumber}: ${s.title}]\n`;
+          if (s.headings?.length) sDesc += `Headings: ${s.headings.join(' | ')}\n`;
+          if (s.paragraphs?.length) sDesc += s.paragraphs.join('\n') + '\n';
+          if (s.bulletPoints?.length) sDesc += s.bulletPoints.join('\n') + '\n';
+          if (s.tables?.length) sDesc += s.tables.join('\n') + '\n';
+          if (s.images?.length) {
+            sDesc += `Visuals on Slide: ` + s.images.map(img => `[Visual ID: ${img.id}] "${img.name}"`).join('; ') + '\n';
+            const visualText = s.images.map(img => img.visionText || img.ocrText).filter(Boolean).join('\n');
+            if (visualText) {
+              sDesc += `Visible training text read from slide images (explain this to learners):\n${visualText}\n`;
+            }
           }
-        }
-        if (s.speakerNotes) sDesc += `Speaker Notes: ${s.speakerNotes}\n`;
-        return sDesc.trim();
-      }).join('\n\n--- NEXT SLIDE ---\n\n');
-    } else if (pages.length > 0) {
-      docContext = pages.map(p => `[PAGE ${p.page_number}${p.title ? `: ${p.title}` : ''}]\n${p.text}`).join('\n\n--- NEXT PAGE ---\n\n');
-    } else {
-      docContext = fullText.slice(0, 32000);
-    }
+          if (s.speakerNotes) sDesc += `Speaker Notes: ${s.speakerNotes}\n`;
+          return sDesc.trim();
+        }).join('\n\n--- NEXT SLIDE ---\n\n');
+      } else if (pages.length > 0) {
+        docContext = pages.map(p => `[PAGE ${p.page_number}${p.title ? `: ${p.title}` : ''}]\n${p.text}`).join('\n\n--- NEXT PAGE ---\n\n');
+      } else {
+        docContext = fullText.slice(0, 32000);
+      }
 
-    const systemPrompt = `You are the Senior Curriculum Architect & Master Knowledge Engineer for SkillBridge.
+      const systemPrompt = `You are the Senior Curriculum Architect & Master Knowledge Engineer for SkillBridge.
 Your mission is to DEEPLY STUDY AND UNDERSTAND the provided course document and synthesize COMPLETE, MEANING-BASED SEMANTIC KNOWLEDGE CHUNKS for ARIA, our AI Tutor.
 
 CRITICAL ARCHITECTURE RULES (MEANING-BASED CHUNKING):
@@ -1077,22 +1052,22 @@ CRITICAL ARCHITECTURE RULES (MEANING-BASED CHUNKING):
   ]
 }`;
 
-    const userPrompt = `Document Filename: ${fileName}\nDocument Format: ${fileType.toUpperCase()}\nDocument Content:\n\n${docContext}`;
+      const userPrompt = `Document Filename: ${fileName}\nDocument Format: ${fileType.toUpperCase()}\nDocument Content:\n\n${docContext}`;
 
-    try {
-      const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
-      const parsed = this._parseJsonObject(aiResponse);
+      try {
+        const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
+        const parsed = this._parseJsonObject(aiResponse);
 
-      if (parsed && Array.isArray(parsed.chunks) && parsed.chunks.length > 0) {
-        console.log(`[AI Comprehension] AI synthesized ${parsed.chunks.length} high-fidelity semantic knowledge chunks.`);
-        return this._formatSynthesizedChunks(parsed.chunks, docMetadata);
+        if (parsed && Array.isArray(parsed.chunks) && parsed.chunks.length > 0) {
+          console.log(`[AI Comprehension] AI synthesized ${parsed.chunks.length} high-fidelity semantic knowledge chunks.`);
+          return this._formatSynthesizedChunks(parsed.chunks, docMetadata);
+        }
+        throw new Error('AI response did not contain valid chunks array.');
+      } catch (e) {
+        console.warn('[AI Comprehension] LLM understanding pass fallback triggered:', e.message);
+        return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
       }
-      throw new Error('AI response did not contain valid chunks array.');
-    } catch (e) {
-      console.warn('[AI Comprehension] LLM understanding pass fallback triggered:', e.message);
-      return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
     }
-  }
 
   /**
    * Hierarchical Multi-Pass Comprehension for Large Documents (> 35k chars or > 24 slides).
@@ -1101,271 +1076,313 @@ CRITICAL ARCHITECTURE RULES (MEANING-BASED CHUNKING):
    * 3. Global synthesis pass builds unified knowledge hierarchy and coherent chunks.
    */
   async _understandLargeDocumentHierarchically(fileName, fullText, docMetadata = {}) {
-    console.log(`[AI Hierarchical] Synthesizing high-speed grounded structural semantic chunks for "${fileName}"...`);
-    return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
-  }
-
-  /**
-   * Normalizes and cleans synthesized AI chunks with fallback metadata.
-   */
-  _formatSynthesizedChunks(chunks, docMetadata = {}) {
-    const { slides = [] } = docMetadata;
-    const slideMap = new Map();
-    if (Array.isArray(slides)) {
-      for (const s of slides) {
-        if (s.slideNumber && Array.isArray(s.images) && s.images.length > 0) {
-          slideMap.set(s.slideNumber, s.images);
-        }
-      }
+      console.log(`[AI Hierarchical] Synthesizing high-speed grounded structural semantic chunks for "${fileName}"...`);
+      return this._getStructuralSemanticChunks(fileName, fullText, docMetadata);
     }
 
-    return chunks.map((c, idx) => {
-      const rawConcept = c.concept || c.title || `Core Concept ${idx + 1}`;
-      const concept = isGarbageTitle(rawConcept) ? `Core Concept ${idx + 1}` : rawConcept;
-      const topic = c.topic || c.module || 'General Curriculum';
-      const subtopic = c.subtopic || null;
-      const chunkType = c.chunkType || 'concept';
-      const keyPoints = Array.isArray(c.keyPoints) ? c.keyPoints : [];
-      const relatedConcepts = Array.isArray(c.relatedConcepts) ? c.relatedConcepts : [];
-      const sourceSlides = Array.isArray(c.sourceSlides)
-        ? c.sourceSlides
-        : (typeof c.sourceSlide === 'number' ? [c.sourceSlide] : null);
-      const sourcePage = typeof c.sourcePage === 'number'
-        ? c.sourcePage
-        : (sourceSlides ? sourceSlides[0] : 1);
-
-      // Collect associated slide visuals from source slides
-      const visuals = [];
-      if (sourceSlides && sourceSlides.length > 0) {
-        for (const sn of sourceSlides) {
-          const imgs = slideMap.get(sn) || [];
-          for (const img of imgs) {
-            if (!visuals.some(v => v.id === img.id || v.mediaPath === img.mediaPath)) {
-              visuals.push({
-                id: img.id,
-                dataUrl: img.dataUrl,
-                fileName: img.fileName,
-                mimetype: img.mimetype,
-                sourceSlide: img.slideNumber,
-                name: img.name,
-                descr: img.descr,
-                purpose: img.descr || img.name || `Visual illustration for ${concept}`,
-                triggerKeywords: [
-                  ...concept.toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
-                  ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
-                ],
-                displayWhen: `while explaining ${concept}`
-              });
-            }
+    /**
+     * Normalizes and cleans synthesized AI chunks with fallback metadata.
+     */
+    _formatSynthesizedChunks(chunks, docMetadata = {}) {
+      const { slides = [] } = docMetadata;
+      const slideMap = new Map();
+      if (Array.isArray(slides)) {
+        for (const s of slides) {
+          if (s.slideNumber && Array.isArray(s.images) && s.images.length > 0) {
+            slideMap.set(s.slideNumber, s.images);
           }
         }
       }
 
-      // Build structured chunkText if not provided or too short
-      let text = (c.chunkText || '').trim();
-      if (!text || text.length < 80) {
-        text = `### 📌 Concept: ${concept}\n**Topic:** ${topic}${subtopic ? ` > ${subtopic}` : ''}\n\n`;
-        if (c.explanation) text += `**Definition & Overview:**\n${c.explanation}\n\n`;
-        if (c.details) text += `**Technical Mechanisms:**\n${c.details}\n\n`;
-        if (c.example) text += `**Practical Example:**\n${c.example}\n\n`;
-        if (keyPoints.length > 0) {
-          text += `**Key Points:**\n${keyPoints.map(p => `- ${p}`).join('\n')}\n\n`;
+      return chunks.map((c, idx) => {
+        const rawConcept = c.concept || c.title || `Core Concept ${idx + 1}`;
+        const concept = isGarbageTitle(rawConcept) ? `Core Concept ${idx + 1}` : rawConcept;
+        const topic = c.topic || c.module || 'General Curriculum';
+        const subtopic = c.subtopic || null;
+        const chunkType = c.chunkType || 'concept';
+        const keyPoints = Array.isArray(c.keyPoints) ? c.keyPoints : [];
+        const relatedConcepts = Array.isArray(c.relatedConcepts) ? c.relatedConcepts : [];
+        const sourceSlides = Array.isArray(c.sourceSlides)
+          ? c.sourceSlides
+          : (typeof c.sourceSlide === 'number' ? [c.sourceSlide] : null);
+        const sourcePage = typeof c.sourcePage === 'number'
+          ? c.sourcePage
+          : (sourceSlides ? sourceSlides[0] : 1);
+
+        // Collect associated slide visuals from source slides
+        const visuals = [];
+        if (sourceSlides && sourceSlides.length > 0) {
+          for (const sn of sourceSlides) {
+            const imgs = slideMap.get(sn) || [];
+            for (const img of imgs) {
+              if (!visuals.some(v => v.id === img.id || v.mediaPath === img.mediaPath)) {
+                visuals.push({
+                  id: img.id,
+                  dataUrl: img.dataUrl,
+                  fileName: img.fileName,
+                  mimetype: img.mimetype,
+                  sourceSlide: img.slideNumber,
+                  name: img.name,
+                  descr: img.descr,
+                  purpose: img.descr || img.name || `Visual illustration for ${concept}`,
+                  triggerKeywords: [
+                    ...concept.toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
+                    ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
+                  ],
+                  displayWhen: `while explaining ${concept}`
+                });
+              }
+            }
+          }
         }
-        const srcTag = sourceSlides?.length
-          ? `Slides ${sourceSlides.join(', ')}`
-          : `Page ${sourcePage}`;
-        text += `*(Source: ${srcTag}${c.sourceSection ? ` - ${c.sourceSection}` : ''})*`;
-      }
 
-      return {
-        chunkIndex: idx,
-        concept,
-        topic,
-        subtopic,
-        chunkType,
-        sourcePage,
-        sourceSlides,
-        sourceSection: c.sourceSection || null,
-        prerequisites: c.prerequisites || null,
-        keyPoints,
-        relatedConcepts,
-        visuals,
-        semanticSummary: (c.explanation || text.slice(0, 200)).replace(/\n/g, ' ').trim(),
-        chunkText: text.trim()
-      };
-    });
-  }
+        // Build structured chunkText if not provided or too short
+        let text = (c.chunkText || '').trim();
+        if (!text || text.length < 80) {
+          text = `### 📌 Concept: ${concept}\n**Topic:** ${topic}${subtopic ? ` > ${subtopic}` : ''}\n\n`;
+          if (c.explanation) text += `**Definition & Overview:**\n${c.explanation}\n\n`;
+          if (c.details) text += `**Technical Mechanisms:**\n${c.details}\n\n`;
+          if (c.example) text += `**Practical Example:**\n${c.example}\n\n`;
+          if (keyPoints.length > 0) {
+            text += `**Key Points:**\n${keyPoints.map(p => `- ${p}`).join('\n')}\n\n`;
+          }
+          const srcTag = sourceSlides?.length
+            ? `Slides ${sourceSlides.join(', ')}`
+            : `Page ${sourcePage}`;
+          text += `*(Source: ${srcTag}${c.sourceSection ? ` - ${c.sourceSection}` : ''})*`;
+        }
 
-  /**
-   * High-Fidelity Structural Semantic Chunker Fallback.
-   * Runs when LLM API is unavailable, rate-limited, or for offline processing.
-   * Clusters consecutive related slides, groups definitions with explanations,
-   * keeps examples with concepts, and extracts rich metadata.
-   */
-  _getStructuralSemanticChunks(fileName, fullText, docMetadata = {}) {
-    const { fileType = 'document', slides = [], pages = [] } = docMetadata;
-    const cleanFileName = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-    const isPpt = fileType === 'pptx' || fileType === 'ppt' || slides.length > 0;
-    const generatedChunks = [];
+        return {
+          chunkIndex: idx,
+          concept,
+          topic,
+          subtopic,
+          chunkType,
+          sourcePage,
+          sourceSlides,
+          sourceSection: c.sourceSection || null,
+          prerequisites: c.prerequisites || null,
+          keyPoints,
+          relatedConcepts,
+          visuals,
+          semanticSummary: (c.explanation || text.slice(0, 200)).replace(/\n/g, ' ').trim(),
+          chunkText: text.trim()
+        };
+      });
+    }
 
-    // 1. PPT/PPTX Structural Chunking — cluster related slides granularly (1-2 slides per chunk)
-    if (isPpt && slides.length > 0) {
-      // If curriculum with lessons is available, align chunks 1:1 with lessons so every lesson has its exact matching chunk
-      const lessons = docMetadata.curriculum?.lessons;
-      if (Array.isArray(lessons) && lessons.length > 0) {
-        const slideMap = new Map((slides || []).map(s => [s.slideNumber, s]));
-        for (let lIdx = 0; lIdx < lessons.length; lIdx++) {
-          const lesson = lessons[lIdx];
-          const sns = Array.isArray(lesson.sourceSlides) && lesson.sourceSlides.length > 0
-            ? lesson.sourceSlides
-            : [Math.min(slides.length, lIdx + 1)];
-          const slideObjs = sns.map(num => slideMap.get(num)).filter(Boolean);
-          const teaching = slideObjs.map(s => this._slideTeachingText(s) || s.fullText || '').join('\n\n').trim();
-          const body = teaching || slideObjs.map(s => s.title).join('\n') || lesson.title;
-          const keyPoints = slideObjs.flatMap(s => s.bulletPoints || []).slice(0, 6).map(b => String(b).replace(/^[\s\-\*]+/, ''));
-          const visuals = slideObjs.flatMap(s => s.images || []);
-          const topic = lesson.moduleTitle || lesson.chapterTitle || cleanFileName;
-          const concept = lesson.title || firstUsefulTitleLine(body) || `${cleanFileName} — Part ${lIdx + 1}`;
+    /**
+     * High-Fidelity Structural Semantic Chunker Fallback.
+     * Runs when LLM API is unavailable, rate-limited, or for offline processing.
+     * Clusters consecutive related slides, groups definitions with explanations,
+     * keeps examples with concepts, and extracts rich metadata.
+     */
+    _getStructuralSemanticChunks(fileName, fullText, docMetadata = {}) {
+      const { fileType = 'document', slides = [], pages = [] } = docMetadata;
+      const cleanFileName = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const curriculum = docMetadata.curriculum;
+      const lessons = Array.isArray(curriculum?.lessons) && curriculum.lessons.length > 0 ? curriculum.lessons : null;
+      const effectiveSlides = (Array.isArray(slides) && slides.length > 0)
+        ? slides
+        : (Array.isArray(curriculum?.slides) && curriculum.slides.length > 0 ? curriculum.slides : []);
+      const isPpt = fileType === 'pptx' || fileType === 'ppt' || fileType === 'presentation' || effectiveSlides.length > 0 || Boolean(lessons);
+      const generatedChunks = [];
 
+      // 1. PPT/Presentation Structural Chunking — cluster related slides granularly or align with curriculum lessons
+      if ((isPpt && (effectiveSlides.length > 0 || lessons)) || lessons) {
+        // If curriculum with lessons is available, align chunks 1:1 with lessons so every lesson has its exact matching chunk
+        if (lessons && lessons.length > 0) {
+          const slideMap = new Map((effectiveSlides || []).map(s => [s.slideNumber, s]));
+          for (let lIdx = 0; lIdx < lessons.length; lIdx++) {
+            const lesson = lessons[lIdx];
+            const sns = Array.isArray(lesson.sourceSlides) && lesson.sourceSlides.length > 0
+              ? lesson.sourceSlides
+              : [lesson.slideNumber || Math.min(effectiveSlides.length || 1, lIdx + 1)];
+            const slideObjs = sns.map(num => slideMap.get(num)).filter(Boolean);
+            const slideTeaching = slideObjs.map(s => this._slideTeachingText(s) || s.fullText || '').join('\n\n').trim();
+            const lessonExplanation = lesson.spokenExplanation || lesson.explanation || '';
+            const body = lessonExplanation || slideTeaching || slideObjs.map(s => s.title).join('\n') || lesson.title;
+            const keyPoints = (Array.isArray(lesson.keyPoints) && lesson.keyPoints.length > 0)
+              ? lesson.keyPoints
+              : (Array.isArray(lesson.keyTakeaways) && lesson.keyTakeaways.length > 0)
+                ? lesson.keyTakeaways
+                : slideObjs.flatMap(s => s.bulletPoints || []).slice(0, 6).map(b => String(b).replace(/^[\s\-\*]+/, ''));
+            const visuals = lesson.image ? [{ id: `img_${lIdx + 1}`, url: lesson.image, name: lesson.title }] : slideObjs.flatMap(s => s.images || []);
+            const topic = lesson.moduleTitle || lesson.chapterTitle || cleanFileName;
+            const concept = lesson.title || firstUsefulTitleLine(body) || `${cleanFileName} — Part ${lIdx + 1}`;
+
+            const fullChunkBody = body.length < 50
+              ? `${concept}: Core instructional training module on ${topic}. ${body}`
+              : body;
+
+            generatedChunks.push({
+              chunkIndex: generatedChunks.length,
+              concept,
+              topic,
+              subtopic: null,
+              chunkType: 'concept',
+              sourcePage: sns[0],
+              sourceSlides: sns,
+              sourceSection: `Slides ${sns.join(', ')}`,
+              prerequisites: null,
+              keyPoints,
+              relatedConcepts: [],
+              visuals,
+              semanticSummary: fullChunkBody.slice(0, 220).replace(/\n/g, ' '),
+              chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${topic}\n\n${fullChunkBody}\n\n*(Source: Slides ${sns.join(', ')})*`
+            });
+          }
+          if (generatedChunks.length > 0) {
+            console.log(`[AI Comprehension] Built ${generatedChunks.length} curriculum-aligned semantic chunks in < 20ms.`);
+            return generatedChunks;
+          }
+        }
+
+        const groupSize = Math.max(1, Math.min(2, Math.ceil(slides.length / 16)));
+        for (let i = 0; i < slides.length; i += groupSize) {
+          const group = slides.slice(i, i + groupSize);
+          const teaching = group.map(s => this._slideTeachingText(s) || s.fullText || '').join('\n\n');
+          const body = teaching.trim() || group.map(s => s.title).join('\n');
+          let concept = firstUsefulTitleLine(teaching);
+          if (!concept && group[0] && !isGarbageTitle(group[0].title)) concept = group[0].title;
+          if (!concept) concept = `${cleanFileName} — Part ${generatedChunks.length + 1}`;
+          const slideNums = group.map(s => s.slideNumber);
           generatedChunks.push({
             chunkIndex: generatedChunks.length,
             concept,
-            topic,
+            topic: cleanFileName,
             subtopic: null,
             chunkType: 'concept',
-            sourcePage: sns[0],
-            sourceSlides: sns,
-            sourceSection: `Slides ${sns.join(', ')}`,
+            sourcePage: slideNums[0],
+            sourceSlides: slideNums,
+            sourceSection: `Slides ${slideNums.join(', ')}`,
             prerequisites: null,
-            keyPoints,
+            keyPoints: group.flatMap(s => s.bulletPoints || []).slice(0, 5).map(b => String(b).replace(/^[\s\-\*]+/, '')),
             relatedConcepts: [],
-            visuals,
+            visuals: group.flatMap(s => s.images || []),
             semanticSummary: body.slice(0, 220).replace(/\n/g, ' '),
-            chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${topic}\n\n${body}\n\n*(Source: Slides ${sns.join(', ')})*`
+            chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${cleanFileName}\n\n${body}\n\n*(Source: Slides ${slideNums.join(', ')})*`
           });
         }
         if (generatedChunks.length > 0) {
-          console.log(`[AI Comprehension] Built ${generatedChunks.length} curriculum-aligned semantic chunks in < 20ms.`);
           return generatedChunks;
         }
       }
 
-      const groupSize = Math.max(1, Math.min(2, Math.ceil(slides.length / 16)));
-      for (let i = 0; i < slides.length; i += groupSize) {
-        const group = slides.slice(i, i + groupSize);
-        const teaching = group.map(s => this._slideTeachingText(s) || s.fullText || '').join('\n\n');
-        const body = teaching.trim() || group.map(s => s.title).join('\n');
-        let concept = firstUsefulTitleLine(teaching);
-        if (!concept && group[0] && !isGarbageTitle(group[0].title)) concept = group[0].title;
-        if (!concept) concept = `${cleanFileName} — Part ${generatedChunks.length + 1}`;
-        const slideNums = group.map(s => s.slideNumber);
-        generatedChunks.push({
-          chunkIndex: generatedChunks.length,
-          concept,
-          topic: cleanFileName,
-          subtopic: null,
-          chunkType: 'concept',
-          sourcePage: slideNums[0],
-          sourceSlides: slideNums,
-          sourceSection: `Slides ${slideNums.join(', ')}`,
-          prerequisites: null,
-          keyPoints: group.flatMap(s => s.bulletPoints || []).slice(0, 5).map(b => String(b).replace(/^[\s\-\*]+/, '')),
-          relatedConcepts: [],
-          visuals: group.flatMap(s => s.images || []),
-          semanticSummary: body.slice(0, 220).replace(/\n/g, ' '),
-          chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${cleanFileName}\n\n${body}\n\n*(Source: Slides ${slideNums.join(', ')})*`
-        });
-      }
-      if (generatedChunks.length > 0) {
-        return generatedChunks;
-      }
-    }
+      // 2. PDF/DOCX page-aware structural chunking
+      if (Array.isArray(pages) && pages.length > 0) {
+        let cluster = [];
+        let clusterPages = [];
+        let clusterLen = 0;
+        let clusterTitle = pages[0]?.title || cleanFileName;
 
-    // 2. PDF/DOCX page-aware structural chunking
-    if (Array.isArray(pages) && pages.length > 0) {
-      let cluster = [];
-      let clusterPages = [];
-      let clusterLen = 0;
-      let clusterTitle = pages[0]?.title || cleanFileName;
+        const flushCluster = () => {
+          if (cluster.length === 0) return;
+          const chunkContent = cluster.join('\n\n');
+          const sourcePage = clusterPages[0] || 1;
+          const concept = clusterTitle || cleanFileName;
+          generatedChunks.push({
+            chunkIndex: generatedChunks.length,
+            concept,
+            topic: cleanFileName,
+            subtopic: null,
+            chunkType: /define|definition|refers to/i.test(chunkContent) ? 'definition' : 'concept',
+            sourcePage,
+            sourceSlides: null,
+            sourceSection: `Pages ${clusterPages.join(', ')}`,
+            prerequisites: null,
+            keyPoints: [],
+            relatedConcepts: [],
+            semanticSummary: chunkContent.slice(0, 200).replace(/\n/g, ' '),
+            chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${cleanFileName}\n\n${chunkContent}\n\n*(Source: Page ${sourcePage}${clusterPages.length > 1 ? `-${clusterPages[clusterPages.length - 1]}` : ''} - ${concept})*`
+          });
+          cluster = [];
+          clusterPages = [];
+          clusterLen = 0;
+        };
 
-      const flushCluster = () => {
-        if (cluster.length === 0) return;
-        const chunkContent = cluster.join('\n\n');
-        const sourcePage = clusterPages[0] || 1;
-        const concept = clusterTitle || cleanFileName;
-        generatedChunks.push({
-          chunkIndex: generatedChunks.length,
-          concept,
-          topic: cleanFileName,
-          subtopic: null,
-          chunkType: /define|definition|refers to/i.test(chunkContent) ? 'definition' : 'concept',
-          sourcePage,
-          sourceSlides: null,
-          sourceSection: `Pages ${clusterPages.join(', ')}`,
-          prerequisites: null,
-          keyPoints: [],
-          relatedConcepts: [],
-          semanticSummary: chunkContent.slice(0, 200).replace(/\n/g, ' '),
-          chunkText: `### 📌 Concept: ${concept}\n**Topic:** ${cleanFileName}\n\n${chunkContent}\n\n*(Source: Page ${sourcePage}${clusterPages.length > 1 ? `-${clusterPages[clusterPages.length - 1]}` : ''} - ${concept})*`
-        });
-        cluster = [];
-        clusterPages = [];
-        clusterLen = 0;
-      };
-
-      for (const page of pages) {
-        const pageText = (page.text || '').trim();
-        if (!pageText) continue;
-        const title = (page.title || pageText.split('\n')[0] || cleanFileName).slice(0, 80);
-        if (clusterLen + pageText.length > 1800 && cluster.length > 0) {
-          flushCluster();
-          clusterTitle = title;
+        for (const page of pages) {
+          const pageText = (page.text || '').trim();
+          if (!pageText) continue;
+          const title = (page.title || pageText.split('\n')[0] || cleanFileName).slice(0, 80);
+          if (clusterLen + pageText.length > 1800 && cluster.length > 0) {
+            flushCluster();
+            clusterTitle = title;
+          }
+          if (cluster.length === 0) {
+            clusterTitle = title;
+          }
+          cluster.push(pageText);
+          clusterPages.push(page.page_number || generatedChunks.length + 1);
+          clusterLen += pageText.length;
+          if (clusterLen > 1800) {
+            flushCluster();
+          }
         }
-        if (cluster.length === 0) {
-          clusterTitle = title;
-        }
-        cluster.push(pageText);
-        clusterPages.push(page.page_number || generatedChunks.length + 1);
-        clusterLen += pageText.length;
-        if (clusterLen > 1800) {
-          flushCluster();
+        flushCluster();
+        if (generatedChunks.length > 0) {
+          return generatedChunks;
         }
       }
-      flushCluster();
-      if (generatedChunks.length > 0) {
-        return generatedChunks;
-      }
-    }
 
-    // 3. Document/PDF Structural Semantic Chunking from raw text
-    const paragraphs = (fullText || '').split(/\n\s*\n/);
-    let currentTopic = cleanFileName;
-    let currentConcept = cleanFileName;
-    let accumulatedParas = [];
-    let currentSourcePage = 1;
+      // 3. Document/PDF Structural Semantic Chunking from raw text
+      const paragraphs = (fullText || '').split(/\n\s*\n/);
+      let currentTopic = cleanFileName;
+      let currentConcept = cleanFileName;
+      let accumulatedParas = [];
+      let currentSourcePage = 1;
 
-    for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
-      const p = paragraphs[pIdx].trim();
-      if (!p) continue;
+      for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
+        const p = paragraphs[pIdx].trim();
+        if (!p) continue;
 
-      const isHeading = p.length < 90 && (
-        p.startsWith('#') ||
-        p.startsWith('Chapter') ||
-        p.startsWith('Module') ||
-        p.startsWith('Section') ||
-        /^[0-9]+(\.[0-9]+)*\s+[A-Z]/.test(p) ||
-        p.endsWith(':')
-      );
+        const isHeading = p.length < 90 && (
+          p.startsWith('#') ||
+          p.startsWith('Chapter') ||
+          p.startsWith('Module') ||
+          p.startsWith('Section') ||
+          /^[0-9]+(\.[0-9]+)*\s+[A-Z]/.test(p) ||
+          p.endsWith(':')
+        );
 
-      if (isHeading) {
-        if (accumulatedParas.length > 0) {
+        if (isHeading) {
+          if (accumulatedParas.length > 0) {
+            const chunkContent = accumulatedParas.join('\n\n');
+            generatedChunks.push({
+              chunkIndex: generatedChunks.length,
+              concept: currentConcept,
+              topic: currentTopic,
+              subtopic: null,
+              chunkType: /define|definition|refers to/i.test(chunkContent) ? 'definition' : 'concept',
+              sourcePage: currentSourcePage,
+              sourceSlides: null,
+              sourceSection: currentConcept,
+              prerequisites: null,
+              keyPoints: [],
+              relatedConcepts: [],
+              semanticSummary: chunkContent.slice(0, 200).replace(/\n/g, ' '),
+              chunkText: `### 📌 Concept: ${currentConcept}\n**Topic:** ${currentTopic}\n\n${chunkContent}\n\n*(Source: Page ${currentSourcePage} - ${currentConcept})*`
+            });
+            accumulatedParas = [];
+          }
+
+          const cleanHeader = p.replace(/^[#\d\.\-\s]+/, '').replace(/:$/, '').trim();
+          if (p.startsWith('# ') || p.startsWith('Chapter') || p.startsWith('Module')) {
+            currentTopic = cleanHeader;
+          }
+          currentConcept = cleanHeader || currentTopic;
+          continue;
+        }
+
+        accumulatedParas.push(p);
+        if (accumulatedParas.join('\n\n').length > 1800) {
           const chunkContent = accumulatedParas.join('\n\n');
           generatedChunks.push({
             chunkIndex: generatedChunks.length,
             concept: currentConcept,
             topic: currentTopic,
             subtopic: null,
-            chunkType: /define|definition|refers to/i.test(chunkContent) ? 'definition' : 'concept',
+            chunkType: 'concept',
             sourcePage: currentSourcePage,
             sourceSlides: null,
             sourceSection: currentConcept,
@@ -1376,18 +1393,11 @@ CRITICAL ARCHITECTURE RULES (MEANING-BASED CHUNKING):
             chunkText: `### 📌 Concept: ${currentConcept}\n**Topic:** ${currentTopic}\n\n${chunkContent}\n\n*(Source: Page ${currentSourcePage} - ${currentConcept})*`
           });
           accumulatedParas = [];
+          currentSourcePage++;
         }
-
-        const cleanHeader = p.replace(/^[#\d\.\-\s]+/, '').replace(/:$/, '').trim();
-        if (p.startsWith('# ') || p.startsWith('Chapter') || p.startsWith('Module')) {
-          currentTopic = cleanHeader;
-        }
-        currentConcept = cleanHeader || currentTopic;
-        continue;
       }
 
-      accumulatedParas.push(p);
-      if (accumulatedParas.join('\n\n').length > 1800) {
+      if (accumulatedParas.length > 0) {
         const chunkContent = accumulatedParas.join('\n\n');
         generatedChunks.push({
           chunkIndex: generatedChunks.length,
@@ -1404,55 +1414,33 @@ CRITICAL ARCHITECTURE RULES (MEANING-BASED CHUNKING):
           semanticSummary: chunkContent.slice(0, 200).replace(/\n/g, ' '),
           chunkText: `### 📌 Concept: ${currentConcept}\n**Topic:** ${currentTopic}\n\n${chunkContent}\n\n*(Source: Page ${currentSourcePage} - ${currentConcept})*`
         });
-        accumulatedParas = [];
-        currentSourcePage++;
       }
-    }
 
-    if (accumulatedParas.length > 0) {
-      const chunkContent = accumulatedParas.join('\n\n');
-      generatedChunks.push({
-        chunkIndex: generatedChunks.length,
-        concept: currentConcept,
-        topic: currentTopic,
-        subtopic: null,
-        chunkType: 'concept',
-        sourcePage: currentSourcePage,
-        sourceSlides: null,
-        sourceSection: currentConcept,
-        prerequisites: null,
-        keyPoints: [],
-        relatedConcepts: [],
-        semanticSummary: chunkContent.slice(0, 200).replace(/\n/g, ' '),
-        chunkText: `### 📌 Concept: ${currentConcept}\n**Topic:** ${currentTopic}\n\n${chunkContent}\n\n*(Source: Page ${currentSourcePage} - ${currentConcept})*`
-      });
+      return generatedChunks;
     }
-
-    return generatedChunks;
-  }
 
   /**
    * Generates a dynamic, content-driven Course curriculum from the local LLM.
    * Never uses OCR/binary garbage strings as lesson titles.
    */
   async generateCourse(fileName, fullText, docMetadata = {}) {
-    const { fileType = 'document', slides = [], pages = [] } = docMetadata;
-    const isPpt = fileType === 'pptx' || fileType === 'ppt' || slides.length > 0;
-    const sampled = this._sampleSlides(slides, 80);
+      const { fileType = 'document', slides = [], pages = [] } = docMetadata;
+      const isPpt = fileType === 'pptx' || fileType === 'ppt' || slides.length > 0;
+      const sampled = this._sampleSlides(slides, 80);
 
-    let textSlice = '';
-    if (isPpt && sampled.length > 0) {
-      textSlice = this._compactSlideSummaries(sampled, 16000);
-      if (slides.length > sampled.length) {
-        textSlice = `This deck has ${slides.length} slides. Summaries below are evenly sampled.\n\n${textSlice}`;
+      let textSlice = '';
+      if (isPpt && sampled.length > 0) {
+        textSlice = this._compactSlideSummaries(sampled, 16000);
+        if (slides.length > sampled.length) {
+          textSlice = `This deck has ${slides.length} slides. Summaries below are evenly sampled.\n\n${textSlice}`;
+        }
+      } else if (pages.length > 0) {
+        textSlice = pages.map(p => `[PAGE ${p.page_number}${p.title && !isGarbageTitle(p.title) ? `: ${p.title}` : ''}]\n${String(p.text || '').slice(0, 600)}`).join('\n\n').slice(0, 16000);
+      } else {
+        textSlice = String(fullText || '').slice(0, 16000);
       }
-    } else if (pages.length > 0) {
-      textSlice = pages.map(p => `[PAGE ${p.page_number}${p.title && !isGarbageTitle(p.title) ? `: ${p.title}` : ''}]\n${String(p.text || '').slice(0, 600)}`).join('\n\n').slice(0, 16000);
-    } else {
-      textSlice = String(fullText || '').slice(0, 16000);
-    }
 
-    const systemPrompt = `You are SkillBridge's curriculum architect. Build a training curriculum from the local LLM using the slide/page summaries.
+      const systemPrompt = `You are SkillBridge's curriculum architect. Build a training curriculum from the local LLM using the slide/page summaries.
 
 HARD RULES:
 - Ignore OCR garbage, OLE binary fragments, font names, and symbol strings. Titles like "UT5FAMX%", "#E.R$#E*", "^^~^^~", "Ecz v2b0", ".- AMM,HCC" are INVALID.
@@ -1482,119 +1470,119 @@ Return ONLY JSON:
   "quiz": [{ "question": "Question from the real material?", "options": ["A", "B", "C", "D"], "answerIndex": 1, "explanation": "Why." }]
 }`;
 
-    const userPrompt = `Document Filename: ${fileName}
+      const userPrompt = `Document Filename: ${fileName}
 Slide/page count: ${slides.length || pages.length || 0}
 
 Document Content:
 ${textSlice}`;
 
-    try {
-      const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
-      const parsed = this._parseJsonObject(aiResponse);
-      if (!parsed || !Array.isArray(parsed.lessons) || parsed.lessons.length === 0) {
-        throw new Error('Incomplete structure from AI response.');
-      }
-      const course = this._sanitizeGeneratedCourse(parsed, slides, fileName);
-      return this._attachLessonMedia(course, slides, pages);
-    } catch (e) {
-      console.warn('generateCourse LLM pass failed, retrying with a shorter prompt:', e.message);
       try {
-        const retryPrompt = `Create 6-18 readable training lessons from this material. Ignore OCR garbage. Return JSON {title, description, lessons:[{title, moduleTitle, sourceSlides, duration}]}. File: ${fileName}\n\n${textSlice.slice(0, 9000)}`;
-        const retryRaw = await this._callLLM(retryPrompt, 'Return JSON only.', true);
-        const retryParsed = this._parseJsonObject(retryRaw);
-        if (retryParsed?.lessons?.length) {
-          const course = this._sanitizeGeneratedCourse(retryParsed, slides, fileName);
-          return this._attachLessonMedia(course, slides, pages);
+        const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
+        const parsed = this._parseJsonObject(aiResponse);
+        if (!parsed || !Array.isArray(parsed.lessons) || parsed.lessons.length === 0) {
+          throw new Error('Incomplete structure from AI response.');
         }
-      } catch (retryErr) {
-        console.warn('generateCourse retry failed:', retryErr.message);
+        const course = this._sanitizeGeneratedCourse(parsed, slides, fileName);
+        return this._attachLessonMedia(course, slides, pages);
+      } catch (e) {
+        console.warn('generateCourse LLM pass failed, retrying with a shorter prompt:', e.message);
+        try {
+          const retryPrompt = `Create 6-18 readable training lessons from this material. Ignore OCR garbage. Return JSON {title, description, lessons:[{title, moduleTitle, sourceSlides, duration}]}. File: ${fileName}\n\n${textSlice.slice(0, 9000)}`;
+          const retryRaw = await this._callLLM(retryPrompt, 'Return JSON only.', true);
+          const retryParsed = this._parseJsonObject(retryRaw);
+          if (retryParsed?.lessons?.length) {
+            const course = this._sanitizeGeneratedCourse(retryParsed, slides, fileName);
+            return this._attachLessonMedia(course, slides, pages);
+          }
+        } catch (retryErr) {
+          console.warn('generateCourse retry failed:', retryErr.message);
+        }
+        console.warn('Fallback triggered for generateCourse: grouping real slides instead of OCR titles');
+        const fallback = this._groupSlidesIntoLessons(slides, fileName);
+        return this._attachLessonMedia(fallback, slides, pages);
       }
-      console.warn('Fallback triggered for generateCourse: grouping real slides instead of OCR titles');
-      const fallback = this._groupSlidesIntoLessons(slides, fileName);
-      return this._attachLessonMedia(fallback, slides, pages);
     }
-  }
 
-  _attachLessonMedia(course, slides = [], pages = []) {
-    const slideImageMap = new Map();
-    for (const s of slides || []) {
-      if (s.slideNumber && Array.isArray(s.images) && s.images.length > 0) {
-        slideImageMap.set(s.slideNumber, s.images);
-      }
-    }
-
-    course.lessons = (course.lessons || []).map((l, idx) => {
-      let matchedSlides = Array.isArray(l.sourceSlides)
-        ? l.sourceSlides.map(n => Number(n)).filter(n => Number.isFinite(n) && n > 0)
-        : [];
-      if (matchedSlides.length === 0 && slides.length > 0) {
-        matchedSlides = [Math.min(slides.length, idx + 1)];
+    _attachLessonMedia(course, slides = [], pages = []) {
+      const slideImageMap = new Map();
+      for (const s of slides || []) {
+        if (s.slideNumber && Array.isArray(s.images) && s.images.length > 0) {
+          slideImageMap.set(s.slideNumber, s.images);
+        }
       }
 
-      const visuals = matchedSlides.flatMap(sn => slideImageMap.get(sn) || []).map(img => ({
-        id: img.id,
-        dataUrl: img.dataUrl,
-        fileName: img.fileName,
-        mimetype: img.mimetype,
-        sourceSlide: img.slideNumber || img.sourceSlide,
-        name: img.name,
-        descr: img.descr,
-        purpose: img.descr || img.name || `Visual illustration for ${l.title}`,
-        triggerKeywords: [
-          ...String(l.title || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
-          ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
-        ],
-        displayWhen: `while explaining ${l.title}`
-      }));
+      course.lessons = (course.lessons || []).map((l, idx) => {
+        let matchedSlides = Array.isArray(l.sourceSlides)
+          ? l.sourceSlides.map(n => Number(n)).filter(n => Number.isFinite(n) && n > 0)
+          : [];
+        if (matchedSlides.length === 0 && slides.length > 0) {
+          matchedSlides = [Math.min(slides.length, idx + 1)];
+        }
 
-      const matchedSlideObjs = matchedSlides.map(sn => slides.find(s => s.slideNumber === sn)).filter(Boolean);
-      const primarySlide = matchedSlideObjs[0] || slides[idx] || null;
-      const primaryPage = Array.isArray(pages) ? (pages[idx] || pages.find(p => p.page_number === idx + 1)) : null;
+        const visuals = matchedSlides.flatMap(sn => slideImageMap.get(sn) || []).map(img => ({
+          id: img.id,
+          dataUrl: img.dataUrl,
+          fileName: img.fileName,
+          mimetype: img.mimetype,
+          sourceSlide: img.slideNumber || img.sourceSlide,
+          name: img.name,
+          descr: img.descr,
+          purpose: img.descr || img.name || `Visual illustration for ${l.title}`,
+          triggerKeywords: [
+            ...String(l.title || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
+            ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
+          ],
+          displayWhen: `while explaining ${l.title}`
+        }));
 
-      const slideData = primarySlide ? {
-        slideNumber: primarySlide.slideNumber,
-        title: isGarbageTitle(primarySlide.title) ? l.title : (primarySlide.title || l.title),
-        headings: primarySlide.headings || [],
-        bulletPoints: primarySlide.bulletPoints || [],
-        paragraphs: primarySlide.paragraphs || [],
-        tables: primarySlide.tables || [],
-        speakerNotes: primarySlide.speakerNotes || '',
-        fullText: primarySlide.fullText || '',
-        images: visuals
-      } : (primaryPage ? {
-        slideNumber: primaryPage.page_number || idx + 1,
-        title: primaryPage.title || l.title,
-        headings: [],
-        bulletPoints: primaryPage.bulletPoints || [],
-        paragraphs: primaryPage.text ? [primaryPage.text] : [],
-        tables: [],
-        speakerNotes: '',
-        fullText: primaryPage.text || '',
-        images: visuals
-      } : null);
+        const matchedSlideObjs = matchedSlides.map(sn => slides.find(s => s.slideNumber === sn)).filter(Boolean);
+        const primarySlide = matchedSlideObjs[0] || slides[idx] || null;
+        const primaryPage = Array.isArray(pages) ? (pages[idx] || pages.find(p => p.page_number === idx + 1)) : null;
 
-      return {
-        ...l,
-        id: idx + 1,
-        sourceSlides: matchedSlides,
-        visuals,
-        slideData,
-        chunkData: primaryPage ? {
-          chunkIndex: idx + 1,
+        const slideData = primarySlide ? {
+          slideNumber: primarySlide.slideNumber,
+          title: isGarbageTitle(primarySlide.title) ? l.title : (primarySlide.title || l.title),
+          headings: primarySlide.headings || [],
+          bulletPoints: primarySlide.bulletPoints || [],
+          paragraphs: primarySlide.paragraphs || [],
+          tables: primarySlide.tables || [],
+          speakerNotes: primarySlide.speakerNotes || '',
+          fullText: primarySlide.fullText || '',
+          images: visuals
+        } : (primaryPage ? {
+          slideNumber: primaryPage.page_number || idx + 1,
           title: primaryPage.title || l.title,
-          text: primaryPage.text || '',
-          bulletPoints: primaryPage.bulletPoints || []
-        } : null,
-        status: idx === 0 ? 'active' : (l.status === 'done' ? 'done' : 'locked'),
-        duration: l.duration || this._lessonDuration(idx)
-      };
-    });
+          headings: [],
+          bulletPoints: primaryPage.bulletPoints || [],
+          paragraphs: primaryPage.text ? [primaryPage.text] : [],
+          tables: [],
+          speakerNotes: '',
+          fullText: primaryPage.text || '',
+          images: visuals
+        } : null);
 
-    return course;
-  }
+        return {
+          ...l,
+          id: idx + 1,
+          sourceSlides: matchedSlides,
+          visuals,
+          slideData,
+          chunkData: primaryPage ? {
+            chunkIndex: idx + 1,
+            title: primaryPage.title || l.title,
+            text: primaryPage.text || '',
+            bulletPoints: primaryPage.bulletPoints || []
+          } : null,
+          status: idx === 0 ? 'active' : (l.status === 'done' ? 'done' : 'locked'),
+          duration: l.duration || this._lessonDuration(idx)
+        };
+      });
+
+      return course;
+    }
 
   async generateLessonQuiz(courseTitle, lessonTitle, contextText, language = 'English') {
-    const systemPrompt = `You are ARIA, the expert AI Tutor for SkillBridge.
+      const systemPrompt = `You are ARIA, the expert AI Tutor for SkillBridge.
 Generate an interactive multiple-choice assessment quiz for the specific lesson: "${lessonTitle}" in course: "${courseTitle}".
 Target Language: ${language}.
 
@@ -1615,83 +1603,83 @@ CRITICAL QUIZ GENERATION RULES:
   ]
 }`;
 
-    const userPrompt = `Document context for lesson "${lessonTitle}":\n${contextText}\n\nTarget Language: ${language}`;
+      const userPrompt = `Document context for lesson "${lessonTitle}":\n${contextText}\n\nTarget Language: ${language}`;
 
-    try {
-      const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
-      const parsed = this._parseJsonObject(aiResponse);
-      if (parsed.quiz && Array.isArray(parsed.quiz) && parsed.quiz.length > 0) {
-        return parsed.quiz;
-      }
-      throw new Error('Invalid quiz JSON output.');
-    } catch (e) {
-      console.warn('Fallback triggered for generateLessonQuiz:', e.message);
-      return [
-        {
-          question: `What is the primary objective of "${lessonTitle}"?`,
-          options: [
-            'To ignore core safety procedures and guidelines',
-            `To master essential operational standards and safety protocols for ${lessonTitle}`,
-            'To bypass equipment inspections and checklists',
-            'None of the above'
-          ],
-          answerIndex: 1,
-          explanation: `Mastering operational standards and safety protocols ensures compliance and risk mitigation for ${lessonTitle}.`
-        },
-        {
-          question: `How are safety requirements for "${lessonTitle}" verified in practice?`,
-          options: [
-            'By skipping validation checks completely',
-            'By operating damaged equipment without reporting',
-            'By following structured inspection checklists and verifying equipment condition',
-            'By guessing operational limits'
-          ],
-          answerIndex: 2,
-          explanation: 'Structured inspection checklists and condition verification ensure equipment reliability and prevent accidents.'
-        },
-        {
-          question: `What is a crucial rule emphasized in "${lessonTitle}"?`,
-          options: [
-            'Strict adherence to mandatory safety protocols and manufacturer limits',
-            'Disabling warning signals and safety alarms',
-            'Leaving unstable loads unsecured',
-            'Operating in unauthorized zones'
-          ],
-          answerIndex: 0,
-          explanation: 'Strict adherence to safety protocols and limits protects personnel and prevents severe operational failures.'
-        },
-        {
-          question: `Which action should be taken if a hazard or non-compliance is identified in "${lessonTitle}"?`,
-          options: [
-            'Ignore the condition and proceed as usual',
-            'Immediately stop, report the hazard, and follow consequence management protocols',
-            'Cover up the issue without documenting',
-            'Continue operating at higher speeds'
-          ],
-          answerIndex: 1,
-          explanation: 'Prompt reporting and corrective actions prevent hazardous conditions from escalating into severe incidents.'
-        },
-        {
-          question: `What is the key takeaway from completing "${lessonTitle}"?`,
-          options: [
-            'Bypassing PPE requirements in hazardous zones',
-            'Eliminating pre-operation checks to save time',
-            'Operating without maintaining proper clearances',
-            'Executing operations safely with complete adherence to verified training standards'
-          ],
-          answerIndex: 3,
-          explanation: `Executing operations safely with strict adherence to standards is the primary goal of ${lessonTitle}.`
+      try {
+        const aiResponse = await this._callLLM(systemPrompt, userPrompt, true);
+        const parsed = this._parseJsonObject(aiResponse);
+        if (parsed.quiz && Array.isArray(parsed.quiz) && parsed.quiz.length > 0) {
+          return parsed.quiz;
         }
-      ];
+        throw new Error('Invalid quiz JSON output.');
+      } catch (e) {
+        console.warn('Fallback triggered for generateLessonQuiz:', e.message);
+        return [
+          {
+            question: `What is the primary objective of "${lessonTitle}"?`,
+            options: [
+              'To ignore core safety procedures and guidelines',
+              `To master essential operational standards and safety protocols for ${lessonTitle}`,
+              'To bypass equipment inspections and checklists',
+              'None of the above'
+            ],
+            answerIndex: 1,
+            explanation: `Mastering operational standards and safety protocols ensures compliance and risk mitigation for ${lessonTitle}.`
+          },
+          {
+            question: `How are safety requirements for "${lessonTitle}" verified in practice?`,
+            options: [
+              'By skipping validation checks completely',
+              'By operating damaged equipment without reporting',
+              'By following structured inspection checklists and verifying equipment condition',
+              'By guessing operational limits'
+            ],
+            answerIndex: 2,
+            explanation: 'Structured inspection checklists and condition verification ensure equipment reliability and prevent accidents.'
+          },
+          {
+            question: `What is a crucial rule emphasized in "${lessonTitle}"?`,
+            options: [
+              'Strict adherence to mandatory safety protocols and manufacturer limits',
+              'Disabling warning signals and safety alarms',
+              'Leaving unstable loads unsecured',
+              'Operating in unauthorized zones'
+            ],
+            answerIndex: 0,
+            explanation: 'Strict adherence to safety protocols and limits protects personnel and prevents severe operational failures.'
+          },
+          {
+            question: `Which action should be taken if a hazard or non-compliance is identified in "${lessonTitle}"?`,
+            options: [
+              'Ignore the condition and proceed as usual',
+              'Immediately stop, report the hazard, and follow consequence management protocols',
+              'Cover up the issue without documenting',
+              'Continue operating at higher speeds'
+            ],
+            answerIndex: 1,
+            explanation: 'Prompt reporting and corrective actions prevent hazardous conditions from escalating into severe incidents.'
+          },
+          {
+            question: `What is the key takeaway from completing "${lessonTitle}"?`,
+            options: [
+              'Bypassing PPE requirements in hazardous zones',
+              'Eliminating pre-operation checks to save time',
+              'Operating without maintaining proper clearances',
+              'Executing operations safely with complete adherence to verified training standards'
+            ],
+            answerIndex: 3,
+            explanation: `Executing operations safely with strict adherence to standards is the primary goal of ${lessonTitle}.`
+          }
+        ];
+      }
     }
-  }
 
   /**
    * Synthesizes an in-depth conceptual lecture of a lesson using RAG in the user's preferred language.
    * Grounded strictly in the retrieved text chunks and designed to provide thorough, extended course-play content.
    */
   async explainLesson(courseTitle, lessonTitle, contextText, language = 'English') {
-    const systemPrompt = `You are ARIA, the senior AI Tutor for SkillBridge.
+      const systemPrompt = `You are ARIA, the senior AI Tutor for SkillBridge.
 Your student is taking the course: "${courseTitle}".
 Current Lesson Topic: "${lessonTitle}".
 Active Teaching Language: ${language}.
@@ -1712,200 +1700,200 @@ PEDAGOGICAL TEACHING & DEPTH INSTRUCTIONS:
    - #### 📌 Key Safety Takeaways (3 high-value bullet points summarizing the core learnings)
    - #### ⚡ Knowledge Check & Reflection (An insightful question for the learner to test their understanding)`;
 
-    const userPrompt = `Retrieved Course Context:\n${contextText}\n\nLesson to teach: "${lessonTitle}"\nSelected Teaching Language: ${language}\nLANGUAGE LOCK: Output the full lecture in ${language} only. Translate any source text that is not already in ${language}.`;
+      const userPrompt = `Retrieved Course Context:\n${contextText}\n\nLesson to teach: "${lessonTitle}"\nSelected Teaching Language: ${language}\nLANGUAGE LOCK: Output the full lecture in ${language} only. Translate any source text that is not already in ${language}.`;
 
-    try {
-      return await this._callLLM(systemPrompt, userPrompt, false);
-    } catch (e) {
-      console.warn('Fallback triggered for explainLesson:', e.message);
-      return this._getMockExplanation(lessonTitle, language);
-    }
-  }
-
-  /**
-   * Fallback: Generates a structured dynamic course mockup using actual extracted topics from the document/presentation
-   * NEVER uses hardcoded default generic topics or forced 5 modules.
-   */
-  _getMockCourse(fileName, text, docMetadata = {}) {
-    const { slides = [] } = docMetadata;
-    if (slides && slides.length > 0) {
-      return this._groupSlidesIntoLessons(slides, fileName);
-    }
-    const cleanName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-    const formattedTitle = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
-    const rawTopics = [];
-    if (false) {
-    } else if (text) {
-      const paras = text.split(/\n+/);
-      for (let p of paras) {
-        p = p.trim();
-        if (!p || p.length < 3 || p.length > 70) continue;
-        if (p.endsWith('.') || p.endsWith(',') || p.endsWith('?') || p.endsWith(';')) continue;
-        const clean = p.replace(/^[\d\.\-\s#\*]+/g, '').trim();
-        if (clean.length < 4 || clean.length > 60) continue;
-        if (isGarbageTitle(clean)) continue;
-        if (!/^[A-Za-z0-9]/.test(clean)) continue;
-        if (rawTopics.length >= 18) break;
-        const lower = clean.toLowerCase();
-        if (lower.includes('table of contents') || lower.includes('agenda') || lower.includes('overview')) continue;
-        if (!rawTopics.includes(clean)) {
-          rawTopics.push(clean);
-        }
+      try {
+        return await this._callLLM(systemPrompt, userPrompt, false);
+      } catch (e) {
+        console.warn('Fallback triggered for explainLesson:', e.message);
+        return this._getMockExplanation(lessonTitle, language);
       }
     }
 
-    // Cluster topics naturally into modules
-    const modules = [];
-    const flatLessons = [];
-    let currentCluster = [];
-    let currentClusterTitle = '';
-
-    for (let i = 0; i < rawTopics.length; i++) {
-      const t = rawTopics[i];
-      if (currentCluster.length === 0) {
-        currentClusterTitle = t;
+    /**
+     * Fallback: Generates a structured dynamic course mockup using actual extracted topics from the document/presentation
+     * NEVER uses hardcoded default generic topics or forced 5 modules.
+     */
+    _getMockCourse(fileName, text, docMetadata = {}) {
+      const { slides = [] } = docMetadata;
+      if (slides && slides.length > 0) {
+        return this._groupSlidesIntoLessons(slides, fileName);
       }
-      currentCluster.push(t);
+      const cleanName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      const formattedTitle = cleanName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-      // Start new module every 2-3 lessons or at the end
-      if (currentCluster.length >= 3 || i === rawTopics.length - 1) {
-        const modId = modules.length + 1;
-        const modTitle = currentClusterTitle || `Module ${modId}: Training Unit`;
-        const modLessons = [];
-
-        for (const lessonTitle of currentCluster) {
-          const lessonIdx = flatLessons.length;
-          const slideNum = Math.min(slides.length || 1, lessonIdx + 1);
-          const slideObj = slides.find(s => s.slideNumber === slideNum || s.title === lessonTitle);
-          const slideVisuals = (slideObj?.images || []).map(img => ({
-            id: img.id,
-            dataUrl: img.dataUrl,
-            fileName: img.fileName,
-            mimetype: img.mimetype,
-            sourceSlide: img.slideNumber,
-            name: img.name,
-            descr: img.descr,
-            purpose: img.descr || img.name || `Visual illustration for ${lessonTitle}`,
-            triggerKeywords: [
-              ...lessonTitle.toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
-              ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
-            ],
-            displayWhen: `while explaining ${lessonTitle}`
-          }));
-
-          const slideData = slideObj ? {
-            slideNumber: slideObj.slideNumber,
-            title: slideObj.title || lessonTitle,
-            headings: slideObj.headings || [],
-            bulletPoints: slideObj.bulletPoints || [],
-            paragraphs: slideObj.paragraphs || [],
-            tables: slideObj.tables || [],
-            speakerNotes: slideObj.speakerNotes || '',
-            fullText: slideObj.fullText || '',
-            images: slideVisuals
-          } : null;
-
-          const lessonObj = {
-            id: flatLessons.length + 1,
-            chapterId: modId,
-            chapterTitle: modTitle,
-            moduleId: modId,
-            moduleTitle: modTitle,
-            title: lessonTitle,
-            sourceSlides: [slideNum],
-            visuals: slideVisuals,
-            slideData,
-            duration: `0${Math.floor(7 + ((flatLessons.length) % 5))}:${((flatLessons.length) * 15) % 60 < 10 ? '0' : ''}${((flatLessons.length) * 15) % 60}`,
-            status: flatLessons.length === 0 ? 'active' : 'locked'
-          };
-          modLessons.push(lessonObj);
-          flatLessons.push(lessonObj);
+      const rawTopics = [];
+      if (false) {
+      } else if (text) {
+        const paras = text.split(/\n+/);
+        for (let p of paras) {
+          p = p.trim();
+          if (!p || p.length < 3 || p.length > 70) continue;
+          if (p.endsWith('.') || p.endsWith(',') || p.endsWith('?') || p.endsWith(';')) continue;
+          const clean = p.replace(/^[\d\.\-\s#\*]+/g, '').trim();
+          if (clean.length < 4 || clean.length > 60) continue;
+          if (isGarbageTitle(clean)) continue;
+          if (!/^[A-Za-z0-9]/.test(clean)) continue;
+          if (rawTopics.length >= 18) break;
+          const lower = clean.toLowerCase();
+          if (lower.includes('table of contents') || lower.includes('agenda') || lower.includes('overview')) continue;
+          if (!rawTopics.includes(clean)) {
+            rawTopics.push(clean);
+          }
         }
+      }
 
-        const modSecs = modLessons.reduce((acc, l) => {
-          const parts = String(l.duration || '').split(':').map(p => parseInt(p, 10) || 0);
-          return acc + (parts.length === 2 ? parts[0] * 60 + parts[1] : 120);
-        }, 0);
-        modules.push({
-          title: modTitle,
-          lessons: modLessons.length,
-          duration: `${Math.max(1, Math.round(modSecs / 60))}m`,
-          locked: modId > 1
+      // Cluster topics naturally into modules
+      const modules = [];
+      const flatLessons = [];
+      let currentCluster = [];
+      let currentClusterTitle = '';
+
+      for (let i = 0; i < rawTopics.length; i++) {
+        const t = rawTopics[i];
+        if (currentCluster.length === 0) {
+          currentClusterTitle = t;
+        }
+        currentCluster.push(t);
+
+        // Start new module every 2-3 lessons or at the end
+        if (currentCluster.length >= 3 || i === rawTopics.length - 1) {
+          const modId = modules.length + 1;
+          const modTitle = currentClusterTitle || `Module ${modId}: Training Unit`;
+          const modLessons = [];
+
+          for (const lessonTitle of currentCluster) {
+            const lessonIdx = flatLessons.length;
+            const slideNum = Math.min(slides.length || 1, lessonIdx + 1);
+            const slideObj = slides.find(s => s.slideNumber === slideNum || s.title === lessonTitle);
+            const slideVisuals = (slideObj?.images || []).map(img => ({
+              id: img.id,
+              dataUrl: img.dataUrl,
+              fileName: img.fileName,
+              mimetype: img.mimetype,
+              sourceSlide: img.slideNumber,
+              name: img.name,
+              descr: img.descr,
+              purpose: img.descr || img.name || `Visual illustration for ${lessonTitle}`,
+              triggerKeywords: [
+                ...lessonTitle.toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3),
+                ...(img.descr || img.name || '').toLowerCase().split(/[\s\-:,]+/).filter(w => w.length > 3)
+              ],
+              displayWhen: `while explaining ${lessonTitle}`
+            }));
+
+            const slideData = slideObj ? {
+              slideNumber: slideObj.slideNumber,
+              title: slideObj.title || lessonTitle,
+              headings: slideObj.headings || [],
+              bulletPoints: slideObj.bulletPoints || [],
+              paragraphs: slideObj.paragraphs || [],
+              tables: slideObj.tables || [],
+              speakerNotes: slideObj.speakerNotes || '',
+              fullText: slideObj.fullText || '',
+              images: slideVisuals
+            } : null;
+
+            const lessonObj = {
+              id: flatLessons.length + 1,
+              chapterId: modId,
+              chapterTitle: modTitle,
+              moduleId: modId,
+              moduleTitle: modTitle,
+              title: lessonTitle,
+              sourceSlides: [slideNum],
+              visuals: slideVisuals,
+              slideData,
+              duration: `0${Math.floor(7 + ((flatLessons.length) % 5))}:${((flatLessons.length) * 15) % 60 < 10 ? '0' : ''}${((flatLessons.length) * 15) % 60}`,
+              status: flatLessons.length === 0 ? 'active' : 'locked'
+            };
+            modLessons.push(lessonObj);
+            flatLessons.push(lessonObj);
+          }
+
+          const modSecs = modLessons.reduce((acc, l) => {
+            const parts = String(l.duration || '').split(':').map(p => parseInt(p, 10) || 0);
+            return acc + (parts.length === 2 ? parts[0] * 60 + parts[1] : 120);
+          }, 0);
+          modules.push({
+            title: modTitle,
+            lessons: modLessons.length,
+            duration: `${Math.max(1, Math.round(modSecs / 60))}m`,
+            locked: modId > 1
+          });
+          currentCluster = [];
+        }
+      }
+
+      if (flatLessons.length === 0) {
+        const slideVisuals = (slides[0]?.images || []).map(img => ({
+          id: img.id,
+          dataUrl: img.dataUrl,
+          fileName: img.fileName,
+          mimetype: img.mimetype,
+          sourceSlide: img.slideNumber,
+          name: img.name,
+          descr: img.descr,
+          purpose: img.descr || img.name || `Visual illustration for ${formattedTitle}`,
+          triggerKeywords: formattedTitle.toLowerCase().split(/\s+/),
+          displayWhen: `while explaining ${formattedTitle}`
+        }));
+
+        flatLessons.push({
+          id: 1,
+          chapterId: 1,
+          chapterTitle: formattedTitle,
+          moduleId: 1,
+          moduleTitle: formattedTitle,
+          title: `${formattedTitle} Core Training`,
+          sourceSlides: [1],
+          visuals: slideVisuals,
+          duration: '02:30',
+          status: 'active'
         });
-        currentCluster = [];
+        modules.push({
+          title: formattedTitle,
+          lessons: 1,
+          duration: '3m',
+          locked: false
+        });
       }
+
+      return {
+        title: `${formattedTitle} Training Program`,
+        description: `Comprehensive training program covering all operational requirements and safety procedures for ${formattedTitle}.`,
+        learning: flatLessons.slice(0, 4).map(l => `Master key protocols for ${l.title}`),
+        includes: [
+          'Interactive ARIA AI Avatar Tutoring',
+          `${flatLessons.length} in-depth training lessons`,
+          `${modules.length} content-driven modules`,
+          'Digital verified completion certificate'
+        ],
+        curriculum: modules,
+        lessons: flatLessons,
+        quiz: [
+          {
+            question: `What is the primary focus of "${flatLessons[0]?.title || formattedTitle}"?`,
+            options: [
+              `To master essential procedures and safety standards for ${flatLessons[0]?.title || formattedTitle}`,
+              'To bypass operational checklists',
+              'To ignore equipment safety guidelines',
+              'None of the above'
+            ],
+            answerIndex: 0,
+            explanation: `Mastering procedures and safety standards is essential for ${flatLessons[0]?.title || formattedTitle}.`
+          }
+        ]
+      };
     }
 
-    if (flatLessons.length === 0) {
-      const slideVisuals = (slides[0]?.images || []).map(img => ({
-        id: img.id,
-        dataUrl: img.dataUrl,
-        fileName: img.fileName,
-        mimetype: img.mimetype,
-        sourceSlide: img.slideNumber,
-        name: img.name,
-        descr: img.descr,
-        purpose: img.descr || img.name || `Visual illustration for ${formattedTitle}`,
-        triggerKeywords: formattedTitle.toLowerCase().split(/\s+/),
-        displayWhen: `while explaining ${formattedTitle}`
-      }));
-
-      flatLessons.push({
-        id: 1,
-        chapterId: 1,
-        chapterTitle: formattedTitle,
-        moduleId: 1,
-        moduleTitle: formattedTitle,
-        title: `${formattedTitle} Core Training`,
-        sourceSlides: [1],
-        visuals: slideVisuals,
-        duration: '02:30',
-        status: 'active'
-      });
-      modules.push({
-        title: formattedTitle,
-        lessons: 1,
-        duration: '3m',
-        locked: false
-      });
-    }
-
-    return {
-      title: `${formattedTitle} Training Program`,
-      description: `Comprehensive training program covering all operational requirements and safety procedures for ${formattedTitle}.`,
-      learning: flatLessons.slice(0, 4).map(l => `Master key protocols for ${l.title}`),
-      includes: [
-        'Interactive ARIA AI Avatar Tutoring',
-        `${flatLessons.length} in-depth training lessons`,
-        `${modules.length} content-driven modules`,
-        'Digital verified completion certificate'
-      ],
-      curriculum: modules,
-      lessons: flatLessons,
-      quiz: [
-        {
-          question: `What is the primary focus of "${flatLessons[0]?.title || formattedTitle}"?`,
-          options: [
-            `To master essential procedures and safety standards for ${flatLessons[0]?.title || formattedTitle}`,
-            'To bypass operational checklists',
-            'To ignore equipment safety guidelines',
-            'None of the above'
-          ],
-          answerIndex: 0,
-          explanation: `Mastering procedures and safety standards is essential for ${flatLessons[0]?.title || formattedTitle}.`
-        }
-      ]
-    };
-  }
-
-  /**
-   * Fallback: Generates explanation when LLM is offline
-   */
-  _getMockExplanation(lessonTitle, language = 'English') {
-    const l = String(language).toLowerCase();
-    if (l === 'zh' || l.includes('chinese') || l.includes('中文')) {
-      return `### 💡 核心概念与概述
+    /**
+     * Fallback: Generates explanation when LLM is offline
+     */
+    _getMockExplanation(lessonTitle, language = 'English') {
+      const l = String(language).toLowerCase();
+      if (l === 'zh' || l.includes('chinese') || l.includes('中文')) {
+        return `### 💡 核心概念与概述
 本课重点讲解 **${lessonTitle}** 的关键基础与应用原理。
 
 #### 🎯 核心原则
@@ -1922,10 +1910,10 @@ PEDAGOGICAL TEACHING & DEPTH INSTRUCTIONS:
 
 #### ⚡ 实践思考
 尝试用自己的话概括 ${lessonTitle} 的核心用途。`;
-    }
+      }
 
-    if (l === 'ms' || l.includes('malay') || l.includes('melayu')) {
-      return `### 💡 Gambaran Keseluruhan & Idea Teras
+      if (l === 'ms' || l.includes('malay') || l.includes('melayu')) {
+        return `### 💡 Gambaran Keseluruhan & Idea Teras
 Pelajaran ini memberi tumpuan kepada konsep asas dan aplikasi praktikal **${lessonTitle}**.
 
 #### 🎯 Prinsip Utama
@@ -1942,10 +1930,10 @@ Bayangkan sebuah orkestra muzik di mana setiap instrumen mempunyai fungsi tersen
 
 #### ⚡ Refleksi Latihan
 Bolehkah anda menerangkan fungsi utama ${lessonTitle} dalam satu ayat mudah?`;
-    }
+      }
 
-    if (l === 'ta' || l.includes('tamil') || l.includes('தமிழ்')) {
-      return `### 💡 மேலோட்டம் மற்றும் அடிப்படைக் கருத்து
+      if (l === 'ta' || l.includes('tamil') || l.includes('தமிழ்')) {
+        return `### 💡 மேலோட்டம் மற்றும் அடிப்படைக் கருத்து
 இந்த பாடம் **${lessonTitle}** பற்றிய முக்கியமான அடிப்படைகள் மற்றும் நடைமுறை பயன்பாடுகளை விளக்குகிறது.
 
 #### 🎯 முக்கிய கோட்பாடுகள்
@@ -1962,10 +1950,10 @@ Bolehkah anda menerangkan fungsi utama ${lessonTitle} dalam satu ayat mudah?`;
 
 #### ⚡ சிந்தனைக்கான கேள்வி
 ${lessonTitle} இன் முக்கிய பயனை உங்கள் சொந்த வார்த்தைகளில் விவரிக்க முடியுமா?`;
-    }
+      }
 
-    if (l === 'bn' || l.includes('bangla') || l.includes('bengali') || l.includes('বাংলা')) {
-      return `### 💡 সংক্ষিপ্ত বিবরণ এবং মূল ধারণা
+      if (l === 'bn' || l.includes('bangla') || l.includes('bengali') || l.includes('বাংলা')) {
+        return `### 💡 সংক্ষিপ্ত বিবরণ এবং মূল ধারণা
 এই পাঠটি **${lessonTitle}** এর মৌলিক ধারণা এবং বাস্তব প্রয়োগ সম্পর্কে বিস্তারিত আলোচনা করে।
 
 #### 🎯 মূল নীতিসমূহ
@@ -1982,10 +1970,10 @@ ${lessonTitle} இன் முக்கிய பயனை உங்கள் �
 
 #### ⚡ অনুশীলনের প্রশ্ন
 আপনি কি ${lessonTitle} এর প্রধান কাজটি সহজ কথায় ব্যাখ্যা করতে পারেন?`;
-    }
+      }
 
-    if (l === 'te' || l.includes('telugu') || l.includes('తెలుగు')) {
-      return `### 💡 సంక్షిప్త వివరణ మరియు ముఖ్య భావన
+      if (l === 'te' || l.includes('telugu') || l.includes('తెలుగు')) {
+        return `### 💡 సంక్షిప్త వివరణ మరియు ముఖ్య భావన
 ఈ పాఠం **${lessonTitle}** యొక్క ప్రాథమిక సూత్రాలు మరియు ఆచరణాత్మక అనువర్తనాల గురించి వివరంగా చర్చిస్తుంది.
 
 #### 🎯 ముఖ్య సూత్రాలు
@@ -2002,9 +1990,9 @@ ${lessonTitle} இன் முக்கிய பயனை உங்கள் �
 
 #### ⚡ ఆలోచించవలసిన ప్రశ్న
 ${lessonTitle} యొక్క ప్రధాన లక్ష్యాన్ని మీ స్వంత మాటల్లో వివరించగలరా?`;
-    }
+      }
 
-    return `### 💡 Overview & Core Idea
+      return `### 💡 Overview & Core Idea
 This lesson focuses on the foundational principles and practical applications of **${lessonTitle}**.
 
 #### 🎯 Key Principles
@@ -2021,7 +2009,7 @@ Think of building a modular structure where each component has a dedicated respo
 
 #### ⚡ Practice Reflection
 *How would you summarize the primary purpose of ${lessonTitle} in a single sentence?*`;
+    }
   }
-}
 
 export default new AIService();

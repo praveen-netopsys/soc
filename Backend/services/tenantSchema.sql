@@ -1,5 +1,5 @@
 -- Extensions
-CREATE EXTENSION IF NOT EXISTS vector;
+-- CREATE EXTENSION IF NOT EXISTS vector; (optional)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- User Table
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS "CourseChunk" (
     "relatedConcepts" JSONB,
     "semanticSummary" TEXT,
     "metadata" JSONB,
-    "embedding" vector(768),
+    "embedding" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -85,8 +85,7 @@ CREATE INDEX IF NOT EXISTS "CourseChunk_topic_idx" ON "CourseChunk"("topic");
 CREATE INDEX IF NOT EXISTS "CourseChunk_concept_idx" ON "CourseChunk"("concept");
 
 -- HNSW Vector Index for Cosine Similarity Search
-CREATE INDEX IF NOT EXISTS "CourseChunk_embedding_hnsw_idx" 
-ON "CourseChunk" USING hnsw ("embedding" vector_cosine_ops);
+-- HNSW index (created when pgvector extension is available)
 
 -- UserCourseAssignment Table
 CREATE TABLE IF NOT EXISTS "UserCourseAssignment" (

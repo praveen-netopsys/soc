@@ -200,17 +200,20 @@ export const tenantService = {
       }
     });
 
-    // Ensure backwards-compatible schema columns exist in tenant DB
-    client.$executeRawUnsafe(`
-      ALTER TABLE IF EXISTS "User"
-        ADD COLUMN IF NOT EXISTS "phone" TEXT;
-      ALTER TABLE IF EXISTS "Admin"
-        ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
-        ADD COLUMN IF NOT EXISTS "fullName" TEXT,
-        ADD COLUMN IF NOT EXISTS "nricFin" TEXT,
-        ADD COLUMN IF NOT EXISTS "phone" TEXT,
-        ADD COLUMN IF NOT EXISTS "department" TEXT;
-    `).catch(() => {});
+    // Ensure backwards-compatible schema columns exist in tenant DB (execute individually to prevent prepared statement multi-command failure)
+    (async () => {
+      try {
+        await client.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`);
+        await client.$executeRawUnsafe(`
+          ALTER TABLE IF EXISTS "Admin"
+            ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
+            ADD COLUMN IF NOT EXISTS "fullName" TEXT,
+            ADD COLUMN IF NOT EXISTS "nricFin" TEXT,
+            ADD COLUMN IF NOT EXISTS "phone" TEXT,
+            ADD COLUMN IF NOT EXISTS "department" TEXT;
+        `);
+      } catch (_) {}
+    })();
 
     tenantClients.set(normalizedCode, client);
     return client;
@@ -966,19 +969,21 @@ export const tenantService = {
         console.log(`[Multi-Tenant] Updated default company database to "${defaultDbName}".`);
       }
 
-      // 4. Ensure required schema columns exist in default database
-      await defaultPrisma.$executeRawUnsafe(`
-        ALTER TABLE IF EXISTS "User"
-        ADD COLUMN IF NOT EXISTS "phone" TEXT;
-      ALTER TABLE IF EXISTS "Admin"
-          ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
-          ADD COLUMN IF NOT EXISTS "fullName" TEXT,
-          ADD COLUMN IF NOT EXISTS "nricFin" TEXT,
-          ADD COLUMN IF NOT EXISTS "phone" TEXT,
-          ADD COLUMN IF NOT EXISTS "department" TEXT;
-      `).catch(err => {
+      // 4. Ensure required schema columns exist in default database (execute individually to prevent prepared statement multi-command failure)
+      try {
+        await defaultPrisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`);
+        await defaultPrisma.$executeRawUnsafe(`
+          ALTER TABLE IF EXISTS "Admin"
+            ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
+            ADD COLUMN IF NOT EXISTS "fullName" TEXT,
+            ADD COLUMN IF NOT EXISTS "nricFin" TEXT,
+            ADD COLUMN IF NOT EXISTS "phone" TEXT,
+            ADD COLUMN IF NOT EXISTS "department" TEXT;
+        `);
+        console.log('[Multi-Tenant] Auto-migration on default DB completed successfully.');
+      } catch (err) {
         console.warn('[Multi-Tenant] Auto-migration on default DB skipped/failed:', err.message);
-      });
+      }
 
       // 5. Ensure default admin user exists
       const adminCount = await defaultPrisma.admin.count().catch(() => 0);

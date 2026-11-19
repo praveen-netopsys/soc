@@ -13,6 +13,8 @@ import ttsRoutes from './routes/tts.js';
 import superAdminRoutes from './routes/superAdmin.js';
 import assistantRoutes from './routes/assistantRoutes.js';
 import voiceRoutes from './routes/voiceRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
+import { aiGatewayClient } from './services/aiGatewayClient.js';
 import { resolveTenant } from './middleware/tenantMiddleware.js';
 import { generalApiLimiter } from './middleware/rateLimiter.js';
 import prisma from './config/prisma.js';
@@ -218,6 +220,10 @@ app.use('/api/assistant', resolveTenant, assistantRoutes);
 app.use('/api/v1/voice', resolveTenant, voiceRoutes);
 app.use('/api/voice', resolveTenant, voiceRoutes);
 
+// Central AI Gateway Integration APIs (Chat, Models, STT, TTS)
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/ai', aiRoutes);
+
 // ============================================================
 // HEALTH CHECK (Production-safe, no error leak)
 // ============================================================
@@ -322,11 +328,14 @@ app.listen(PORT, async () => {
   await checkDatabaseConnection();
 
   try {
-    const health = await aiService.checkGatewayHealth();
-    const gatewayUrl = aiService.getGatewayBaseUrl();
-    console.log(`[LLM Gateway] Health OK at ${gatewayUrl} (model: ${health?.model || 'unknown'})`);
+    const health = await aiGatewayClient.checkHealth();
+    if (health.status === 'ok') {
+      console.log(`[Central AI Gateway] Health OK at ${health.gatewayUrl} (${health.latencyMs}ms)`);
+    } else {
+      console.warn(`[Central AI Gateway] Health notice at ${health.gatewayUrl}: ${health.error}`);
+    }
   } catch (e) {
-    console.warn('[LLM Gateway] Notice: Gateway health check on port 8081.');
+    console.warn('[Central AI Gateway] Health check error:', e.message);
   }
 
   // Schedule automated daily database backup (every 24 hours)

@@ -1,12 +1,10 @@
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  extensions = [pgvector(map: "vector")]
 }
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
 }
 
 model User {
@@ -82,7 +80,7 @@ model CourseChunk {
   relatedConcepts Json?    // Array of related concept names
   semanticSummary String?  @db.Text
   metadata        Json?    // Additional contextual metadata
-  embedding       Unsupported("vector(768)")?
+  embedding       String?                // Vector embedding string (e.g. 768-dim)
   createdAt       DateTime @default(now())
 
   course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)

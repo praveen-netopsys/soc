@@ -79,3 +79,34 @@ Thumbs.db
 .vscode/
 .idea/
 scratch/
+
+
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated course data
+**/storage/courses/
+**/storage/extracted/
+
+# Generated frontend assets
+Backend/public/assets/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+*.log

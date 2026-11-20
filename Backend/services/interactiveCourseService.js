@@ -49,12 +49,9 @@ export class InteractiveCourseService {
 
   _resolvePythonExe() {
     const candidatePaths = [
-      'C:\\Praveen\\Skill-Bridge\\ai-service\\.venv\\Scripts\\python.exe',
-      'C:\\Praveen\\skill-bridge studio\\Skill-Bridge\\ai-service\\.venv\\Scripts\\python.exe',
-      path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', '.venv', 'Scripts', 'python.exe'),
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', '.venv', 'Scripts', 'python.exe'),
-      path.join(process.cwd(), '..', 'ai-service', '.venv', 'Scripts', 'python.exe'),
       path.join(process.cwd(), 'ai-service', '.venv', 'Scripts', 'python.exe'),
+      path.join(process.cwd(), '..', 'ai-service', '.venv', 'Scripts', 'python.exe'),
+      'C:\\Praveen\\Skill-Bridge\\ai-service\\.venv\\Scripts\\python.exe',
       'python'
     ];
     for (const p of candidatePaths) {
@@ -221,20 +218,7 @@ export class InteractiveCourseService {
     const destDir = path.join(process.cwd(), 'uploads', 'courses', String(courseId));
     const backendDestDir = path.join(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId));
 
-    // Resolve Explain Studio courses storage directory dynamically (local workspace priority)
-    const explainCandidateDirs = [
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(jobId)),
-      path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(jobId)),
-      path.join('C:\\Users\\pavankumar\\Music\\Skill-Bridge\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(jobId)),
-      path.join('C:\\Users\\pavankumar\\Downloads\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(jobId))
-    ];
-    let explainSrcDir = explainCandidateDirs[0];
-    for (const cand of explainCandidateDirs) {
-      if (fs.existsSync(cand)) {
-        explainSrcDir = cand;
-        break;
-      }
-    }
+    let explainSrcDir = path.join(process.cwd(), 'uploads', 'courses', String(jobId));
 
     for (const targetBase of [destDir, backendDestDir]) {
       const slidesDest = path.join(targetBase, 'slides');

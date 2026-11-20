@@ -22,11 +22,7 @@ const inFlightQuizzes = new Map();
 export function getCourseUploadDir(courseId) {
   const candidates = [
     path.join(process.cwd(), 'uploads', 'courses', String(courseId)),
-    path.join(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId)),
-    path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(courseId)),
-    path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(courseId)),
-    path.join('C:\\Users\\pavankumar\\Music\\Skill-Bridge\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(courseId)),
-    path.join('C:\\Users\\pavankumar\\Downloads\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(courseId))
+    path.join(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId))
   ];
   for (const c of candidates) {
     if (fs.existsSync(c)) return c;
@@ -169,87 +165,61 @@ router.post('/upload', authenticateToken, requireRole(['ADMIN']), upload.single(
       },
     });
 
-    // Save original file buffer and individual slide/page images to disk for lightweight streaming
+    // Retain slide images and full slide content directly inside PostgreSQL (no local disk storage)
     try {
-      const courseUploadDir = path.join(process.cwd(), 'uploads', 'courses', String(newCourse.id));
-      const slidesDir = path.join(courseUploadDir, 'slides');
-      const pagesDir = path.join(courseUploadDir, 'pages');
-      fs.mkdirSync(slidesDir, { recursive: true });
-      fs.mkdirSync(pagesDir, { recursive: true });
-      fs.writeFileSync(path.join(courseUploadDir, req.file.originalname), req.file.buffer);
-      console.log(`[File Storage] Saved original file to ${path.join(courseUploadDir, req.file.originalname)}`);
-
-      // Extract slide images to disk
       if (Array.isArray(generatedCourse.slides)) {
         generatedCourse.slides = generatedCourse.slides.map((s, idx) => {
           const sNum = s.slideNumber || idx + 1;
-          const slideFile = path.join(slidesDir, `Slide${sNum}.png`);
-          const rawData = s.fullSlideImage?.dataUrl || s.images?.[0]?.dataUrl || s.dataUrl;
-          if (rawData && rawData.startsWith('data:image')) {
-            const base64Part = rawData.split(',')[1];
-            if (base64Part) {
-              fs.writeFileSync(slideFile, Buffer.from(base64Part, 'base64'));
-            }
-          }
+          const rawData = s.fullSlideImage?.dataUrl || s.images?.[0]?.dataUrl || s.dataUrl || s.image;
           const imageUrl = `/api/v1/courses/${newCourse.id}/slides/${sNum}/image`;
           return {
             ...s,
             slideNumber: sNum,
-            image: imageUrl,
+            image: rawData || imageUrl,
+            dataUrl: rawData || undefined,
             fullSlideImage: {
               id: `full_slide_${sNum}`,
               url: imageUrl,
+              dataUrl: rawData || undefined,
               slideNumber: sNum,
               fileName: `Slide${sNum}.png`,
               mimetype: 'image/png'
-            },
-            images: (s.images || []).map((im, imIdx) => ({
-              ...im,
-              dataUrl: undefined,
-              url: `/api/v1/courses/${newCourse.id}/slides/${sNum}/image`
-            }))
+            }
           };
         });
       }
 
-      // Extract page images to disk
       if (Array.isArray(generatedCourse.pages)) {
         generatedCourse.pages = generatedCourse.pages.map((p, idx) => {
           const pNum = p.page_number || p.pageNumber || idx + 1;
-          const pageFile = path.join(pagesDir, `Page${pNum}.png`);
-          const rawData = p.pageImage?.dataUrl || p.images?.[0]?.dataUrl || p.dataUrl;
-          if (rawData && rawData.startsWith('data:image')) {
-            const base64Part = rawData.split(',')[1];
-            if (base64Part) {
-              fs.writeFileSync(pageFile, Buffer.from(base64Part, 'base64'));
-            }
-          }
+          const rawData = p.pageImage?.dataUrl || p.images?.[0]?.dataUrl || p.dataUrl || p.image;
           const imageUrl = `/api/v1/courses/${newCourse.id}/pages/${pNum}/image`;
           return {
             ...p,
             page_number: pNum,
             pageNumber: pNum,
-            image: imageUrl,
+            image: rawData || imageUrl,
+            dataUrl: rawData || undefined,
             pageImage: {
               id: `full_page_${pNum}`,
               url: imageUrl,
+              dataUrl: rawData || undefined,
               pageNumber: pNum,
               fileName: `Page${pNum}.png`,
               mimetype: 'image/png'
-            },
-            images: (p.images || []).map(im => ({ ...im, dataUrl: undefined }))
+            }
           };
         });
       }
 
-      // Update course in DB with lightweight sanitized curriculum
+      // Update course in DB with self-contained curriculum (stored 100% in PostgreSQL)
       await targetPrisma.course.update({
         where: { id: newCourse.id },
         data: { curriculum: generatedCourse }
       });
-      console.log(`[File Storage] Saved slide/page PNGs to disk and sanitized course payload in database.`);
+      console.log(`[Storage] Course and all slide assets saved 100% directly in PostgreSQL.`);
     } catch (saveErr) {
-      console.warn(`[File Storage] Notice saving course files:`, saveErr.message);
+      console.warn(`[Storage] Notice on finalizing course curriculum:`, saveErr.message);
     }
 
     // Store semantic chunks and generate vector embeddings directly in PostgreSQL pgvector
@@ -345,37 +315,37 @@ router.get('/:id/slides/:slideNum/image', async (req, res) => {
       return res.status(400).json({ error: 'Invalid slide number.' });
     }
 
-    const courseUploadDir = getCourseUploadDir(courseId);
     const { course } = await findCourseAcrossTenants(req, courseId, {
       select: { id: true, curriculum: true, fileName: true }
     });
-    const cur = typeof course?.curriculum === 'string' ? JSON.parse(course.curriculum) : (course?.curriculum || {});
-    const esJobId = cur?.explainStudioJobId || courseId;
+    if (!course) return res.status(404).json({ error: 'Course not found.' });
 
-    const slidesDir = path.join(courseUploadDir, 'slides');
+    const cur = typeof course?.curriculum === 'string' ? JSON.parse(course.curriculum) : (course?.curriculum || {});
     const targetSlide = (cur.slides || []).find(s => s.slideNumber === slideNum) || cur.slides?.[slideNum - 1];
 
+    // 1. Primary: Serve directly from PostgreSQL Base64 memory buffer (zero disk dependency)
+    const rawData = targetSlide?.fullSlideImage?.dataUrl || targetSlide?.dataUrl || targetSlide?.image || targetSlide?.images?.[0]?.dataUrl;
+    if (rawData && typeof rawData === 'string' && rawData.startsWith('data:image')) {
+      const base64Part = rawData.split(',')[1];
+      if (base64Part) {
+        const buf = Buffer.from(base64Part, 'base64');
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.end(buf);
+      }
+    }
+
+    // 2. Secondary fallback: Check disk cache if available
+    const courseUploadDir = getCourseUploadDir(courseId);
+    const slidesDir = path.join(courseUploadDir, 'slides');
     const candidates = [
       targetSlide?.imagePath,
       path.join(slidesDir, `Slide${slideNum}.png`),
       path.join(slidesDir, `slide_${slideNum}.png`),
       path.join(slidesDir, `slide${slideNum}.png`),
       path.join(courseUploadDir, `Slide${slideNum}.png`),
-      path.join(courseUploadDir, `slide_${slideNum}.png`),
       path.resolve(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId), 'slides', `Slide${slideNum}.png`),
-      path.resolve(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId), 'slides', `slide_${slideNum}.png`),
-      path.resolve(process.cwd(), 'uploads', 'courses', String(courseId), 'slides', `Slide${slideNum}.png`),
-      path.resolve(process.cwd(), 'uploads', 'courses', String(courseId), 'slides', `slide_${slideNum}.png`),
-      path.resolve(process.cwd(), '..', 'Backend', 'uploads', 'courses', String(courseId), 'slides', `Slide${slideNum}.png`),
-      path.resolve(process.cwd(), '..', 'uploads', 'courses', String(courseId), 'slides', `Slide${slideNum}.png`),
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(courseId), 'slides', `slide_${slideNum}.png`),
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(esJobId), 'slides', `slide_${slideNum}.png`),
-      path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(courseId), 'slides', `slide_${slideNum}.png`),
-      path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(esJobId), 'slides', `slide_${slideNum}.png`),
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(courseId), 'slides', `slide_${slideNum}.png`),
-      path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(esJobId), 'slides', `slide_${slideNum}.png`),
-      path.join('C:\\Users\\pavankumar\\Music\\Skill-Bridge\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(esJobId), 'slides', `slide_${slideNum}.png`),
-      path.join('C:\\Users\\pavankumar\\Downloads\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(esJobId), 'slides', `slide_${slideNum}.png`)
+      path.resolve(process.cwd(), 'uploads', 'courses', String(courseId), 'slides', `Slide${slideNum}.png`)
     ].filter(Boolean);
 
     for (const sf of candidates) {
@@ -383,23 +353,6 @@ router.get('/:id/slides/:slideNum/image', async (req, res) => {
         res.setHeader('Content-Type', 'image/png');
         res.setHeader('Cache-Control', 'public, max-age=86400');
         return fs.createReadStream(sf).pipe(res);
-      }
-    }
-
-    if (!course) return res.status(404).json({ error: 'Course not found.' });
-
-    const rawData = targetSlide?.fullSlideImage?.dataUrl || targetSlide?.images?.[0]?.dataUrl;
-
-    if (rawData && rawData.startsWith('data:image')) {
-      const base64Part = rawData.split(',')[1];
-      if (base64Part) {
-        fs.mkdirSync(slidesDir, { recursive: true });
-        const buf = Buffer.from(base64Part, 'base64');
-        const slideFile = path.join(slidesDir, `Slide${slideNum}.png`);
-        fs.writeFileSync(slideFile, buf);
-        res.setHeader('Content-Type', 'image/png');
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-        return res.end(buf);
       }
     }
 
@@ -419,16 +372,6 @@ router.get('/:id/pages/:pageNum/image', async (req, res) => {
       return res.status(400).json({ error: 'Invalid page number.' });
     }
 
-    const courseUploadDir = path.join(process.cwd(), 'uploads', 'courses', String(courseId));
-    const pagesDir = path.join(courseUploadDir, 'pages');
-    const pageFile = path.join(pagesDir, `Page${pageNum}.png`);
-
-    if (fs.existsSync(pageFile)) {
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      return fs.createReadStream(pageFile).pipe(res);
-    }
-
     const targetPrisma = req.prisma || prisma;
     const course = await targetPrisma.course.findUnique({
       where: { id: courseId },
@@ -438,18 +381,26 @@ router.get('/:id/pages/:pageNum/image', async (req, res) => {
 
     const cur = typeof course.curriculum === 'string' ? JSON.parse(course.curriculum) : (course.curriculum || {});
     const targetPage = (cur.pages || []).find(p => (p.page_number || p.pageNumber) === pageNum) || cur.pages?.[pageNum - 1];
-    const rawData = targetPage?.pageImage?.dataUrl || targetPage?.images?.[0]?.dataUrl;
+    const rawData = targetPage?.pageImage?.dataUrl || targetPage?.dataUrl || targetPage?.image || targetPage?.images?.[0]?.dataUrl;
 
-    if (rawData && rawData.startsWith('data:image')) {
+    if (rawData && typeof rawData === 'string' && rawData.startsWith('data:image')) {
       const base64Part = rawData.split(',')[1];
       if (base64Part) {
-        fs.mkdirSync(pagesDir, { recursive: true });
         const buf = Buffer.from(base64Part, 'base64');
-        fs.writeFileSync(pageFile, buf);
         res.setHeader('Content-Type', 'image/png');
         res.setHeader('Cache-Control', 'public, max-age=86400');
         return res.end(buf);
       }
+    }
+
+    const courseUploadDir = path.join(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId));
+    const pagesDir = path.join(courseUploadDir, 'pages');
+    const pageFile = path.join(pagesDir, `Page${pageNum}.png`);
+
+    if (fs.existsSync(pageFile)) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return fs.createReadStream(pageFile).pipe(res);
     }
 
     return res.status(404).json({ error: `Page image ${pageNum} not found.` });
@@ -557,15 +508,8 @@ router.get('/:id/slides/:slideNum/audio', async (req, res) => {
     for (const l of langVariants) {
       const dirs = [
         path.join(courseUploadDir, 'audio', l),
-        path.join(process.cwd(), 'uploads', 'courses', String(courseId), 'audio', l),
         path.join(process.cwd(), 'Backend', 'uploads', 'courses', String(courseId), 'audio', l),
-        path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(courseId), 'audio', l),
-        path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(esJobId), 'audio', l),
-        path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(courseId), 'audio', l),
-        path.join(process.cwd(), '..', 'explain-studio-local-frontend-server-backend', 'backend', 'storage', 'courses', String(esJobId), 'audio', l),
-        path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(courseId), 'audio', l),
-        path.join(process.cwd(), 'explain-studio-local-frontend-server-backend', 'explain-studio', 'backend', 'storage', 'courses', String(esJobId), 'audio', l),
-        path.join('C:\\Users\\pavankumar\\Music\\Skill-Bridge\\explain-studio-local-frontend-server-backend\\explain-studio\\backend\\storage\\courses', String(esJobId), 'audio', l)
+        path.join(process.cwd(), 'uploads', 'courses', String(courseId), 'audio', l)
       ];
       for (const d of dirs) {
         candidateFiles.push(

@@ -110,3 +110,15 @@ __pycache__/
 
 # Logs
 *.log
+
+# Legacy and unwanted folders
+explain-studio*
+**/explain-studio*
+*.traineddata
+Backend/eng.traineddata
+
+# Legacy and unwanted folders
+explain-studio*
+**/explain-studio*
+*.traineddata
+Backend/eng.traineddata
